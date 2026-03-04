@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Admin Dashboard - Undangan Khitan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Custom styles */
+        .badge-hadir { @apply bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold; }
+        .badge-tidak { @apply bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-semibold; }
+        .badge-pending { @apply bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-semibold; }
+        
+        /* Notification style */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 9999;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .notification.success { background-color: #10b981; }
+        .notification.error { background-color: #ef4444; }
+        .notification.info { background-color: #3b82f6; }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Fix for desktop menu */
+        @media (min-width: 640px) {
+            .desktop-menu {
+                display: flex !important;
+            }
+            .mobile-menu {
+                display: none !important;
+            }
+        }
+        
+        @media (max-width: 639px) {
+            .desktop-menu {
+                display: none !important;
+            }
+            .mobile-menu {
+                display: block;
+            }
+        }
+    </style>
+        <style>
+            @media (max-width: 639px) {
+                #dashboard h2,
+                #tamu h2 {
+                    margin-top: 3.3rem !important;
+                    margin-bottom: 0 !important;
+                }
+            }
+        </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navbar -->
+    <nav class="bg-white shadow-lg fixed w-full z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-14 sm:h-16 items-center mt-5 sm:mt-0">
+                <div class="flex items-center">
+                    <i class="fas fa-mosque text-green-600 text-2xl mr-2"></i>
+                    <span class="font-semibold text-xl text-gray-800">Admin Khitan</span>
+                </div>
+                
+                <!-- Mobile menu button - visible only on mobile -->
+                <div class="flex items-center sm:hidden">
+                    <button id="mobile-menu-button" class="text-gray-500 hover:text-gray-600 focus:outline-none fixed top-9 right-4 z-50 sm:static sm:top-auto sm:right-auto">
+                        <i class="fas fa-bars text-2xl"></i>
+                    </button>
+                </div>
+
+                <!-- Desktop menu - visible on desktop, hidden on mobile -->
+                <div class="desktop-menu hidden sm:flex items-center space-x-4">
+                    <a href="javascript:void(0)" class="nav-link px-3 py-2 rounded-lg hover:bg-gray-100 transition flex items-center" data-section="dashboard">
+                        <i class="fas fa-chart-pie mr-2"></i>Dashboard
+                    </a>
+                    <a href="javascript:void(0)" class="nav-link px-3 py-2 rounded-lg hover:bg-gray-100 transition flex items-center" data-section="tamu">
+                        <i class="fas fa-users mr-2"></i>Data Tamu
+                    </a>
+                    <a href="javascript:void(0)" class="nav-link px-3 py-2 rounded-lg hover:bg-gray-100 transition flex items-center" data-section="generator">
+                        <i class="fas fa-link mr-2"></i>Generator
+                    </a>
+                    <button onclick="openTamuModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition flex items-center">
+                        <i class="fas fa-plus mr-2"></i>Tambah Tamu
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile menu - hidden by default -->
+        <div id="mobile-menu" class="mobile-menu hidden sm:hidden bg-white border-t shadow-lg">
+                        <div class="px-4 pt-0 pb-2 space-y-2" style="margin-top:0!important;padding-top:0!important;">
+                                <style>
+                                    /* Hilangkan margin/padding atas pada menu pertama, dan naikkan lebih rapat */
+                                    #mobile-menu .space-y-2 > *:first-child {
+                                        margin-top: -8px !important;
+                                        padding-top: 0 !important;
+                                    }
+                                    /* Gaya judul Dashboard di menu mobile agar mirip judul utama */
+                                    #mobile-menu .space-y-2 > *:first-child span {
+                                        font-size: 1.5rem !important;
+                                        font-weight: 700 !important;
+                                        color: #222 !important;
+                                        margin-left: 0 !important;
+                                    }
+                                    #mobile-menu .space-y-2 > *:first-child svg {
+                                        display: none !important;
+                                    }
+                                </style>
+                <a href="javascript:void(0)" class="nav-link flex items-center py-3 px-4 rounded-lg hover:bg-gray-50 transition" data-section="dashboard">
+                    <i class="fas fa-chart-pie w-6 mr-3"></i>Dashboard
+                </a>
+                <a href="javascript:void(0)" class="nav-link flex items-center py-3 px-4 rounded-lg hover:bg-gray-50 transition" data-section="tamu">
+                    <i class="fas fa-users w-6 mr-3"></i>Data Tamu
+                </a>
+                <a href="javascript:void(0)" class="nav-link flex items-center py-3 px-4 rounded-lg hover:bg-gray-50 transition" data-section="generator">
+                    <i class="fas fa-link w-6 mr-3"></i>Generator
+                </a>
+                <button onclick="openTamuModal()" class="w-full flex items-center bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition mt-2">
+                                        <i class="fas fa-plus w-6 mr-3"></i>Tambah Tamu
+                                </button>
+                                <style>
+                                    @media (max-width: 639px) {
+                                        #mobile-menu button.bg-green-600 {
+                                            margin-top: 1rem !important;
+                                            margin-bottom: 2.4rem !important;
+                                        }
+                                    }
+                                </style>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="pt-20 pb-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+                <style>
+                @media (max-width: 639px) {
+                    h2.text-2xl.font-bold.text-gray-800 {
+                        margin-top: 1.2rem !important;
+                    }
+                }
+                </style>
+        <!-- Dashboard Section -->
+        <style>
+        @media (max-width: 639px) {
+            nav {
+                min-height: 3.5rem !important;
+            }
+            main {
+                padding-top: 6.5rem !important;
+            }
+        }
+        </style>
+        <style>
+        @media (max-width: 639px) {
+            main {
+                padding-top: 5.5rem !important;
+            }
+        }
+        </style>
+        <section id="dashboard" class="section mb-10">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 sm:mt-16" style="margin-top:4.5rem;">Dashboard</h2>
+                <div class="flex items-center mt-2 sm:mt-0">
+                    <span class="text-sm text-gray-500 mr-2">
+                        <i class="fas fa-sync-alt mr-1"></i>Update real-time
+                    </span>
+                    <button onclick="refreshData()" class="text-green-600 hover:text-green-700" title="Refresh data">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+                <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-xs md:text-sm">Total Tamu</p>
+                            <p class="text-2xl md:text-3xl font-bold text-gray-800" id="total-tamu">0</p>
+                        </div>
+                        <div class="bg-green-100 p-2 md:p-3 rounded-full">
+                            <i class="fas fa-users text-green-600 text-xl md:text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-xs md:text-sm">Hadir</p>
+                            <p class="text-2xl md:text-3xl font-bold text-green-600" id="total-hadir">0</p>
+                        </div>
+                        <div class="bg-green-100 p-2 md:p-3 rounded-full">
+                            <i class="fas fa-check-circle text-green-600 text-xl md:text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-xs md:text-sm">Tidak Hadir</p>
+                            <p class="text-2xl md:text-3xl font-bold text-red-600" id="total-tidak-hadir">0</p>
+                        </div>
+                        <div class="bg-red-100 p-2 md:p-3 rounded-full">
+                            <i class="fas fa-times-circle text-red-600 text-xl md:text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-xs md:text-sm">Undangan Terkirim</p>
+                            <p class="text-2xl md:text-3xl font-bold text-blue-600" id="total-terkirim">0</p>
+                        </div>
+                        <div class="bg-blue-100 p-2 md:p-3 rounded-full">
+                            <i class="fas fa-envelope text-blue-600 text-xl md:text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Guests Table -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="px-4 md:px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800">Tamu Terbaru</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kontak</th>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-guests-table" class="divide-y divide-gray-200">
+                            <!-- Data will be inserted via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tamu Management Section -->
+        <section id="tamu" class="section hidden mb-10">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Manajemen Tamu</h2>
+            <!-- Tambah Tamu Button (Bottom) -->
+            <div class="flex justify-end mb-4">
+                <button onclick="openTamuModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm flex items-center">
+                    <i class="fas fa-plus mr-2"></i>Tambah Tamu
+                </button>
+            </div>
+            
+            <!-- Search and Filter -->
+            <div class="bg-white rounded-xl shadow-md p-4 md:p-6 mb-6">
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <div class="flex-1">
+                        <div class="relative">
+                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                            <input type="text" id="search-input" placeholder="Cari tamu..." 
+                                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500 text-sm md:text-base">
+                        </div>
+                    </div>
+                    <div class="sm:w-48">
+                        <select id="filter-status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500 text-sm md:text-base">
+                            <option value="all">Semua Status</option>
+                            <option value="hadir">Hadir</option>
+                            <option value="tidak">Tidak Hadir</option>
+                            <option value="pending">Pending</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CRUD Table -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="px-4 md:px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <h3 class="text-lg font-semibold text-gray-800">Daftar Tamu</h3>
+                    <button onclick="openTamuModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm w-full sm:w-auto flex items-center justify-center">
+                        <i class="fas fa-plus mr-2"></i>Tambah Tamu
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">No. WhatsApp</th>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Link Undangan</th>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="crud-table-body" class="divide-y divide-gray-200">
+                            <!-- Data will be inserted via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Generator Section -->
+        <section id="generator" class="section hidden mb-10">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Generator Link Undangan</h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Generator Form -->
+                <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Buat Link Undangan</h3>
+                    
+                    <form id="generator-form" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Pilih Tamu</label>
+                            <select id="guest-select" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500 text-sm md:text-base">
+                                <option value="">Pilih tamu...</option>
+                                <!-- Options will be loaded via JS -->
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Template Pesan</label>
+                            <select id="message-template" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500 text-sm md:text-base">
+                                <option value="formal">Formal</option>
+                                <option value="santai">Santai</option>
+                                <option value="islami">Islami</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition text-sm md:text-base">
+                            <i class="fas fa-link mr-2"></i>Generate Link
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Result and Preview -->
+                <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Hasil Generate</h3>
+                    
+                    <div id="generator-result" class="space-y-4">
+                        <div class="bg-gray-50 p-3 md:p-4 rounded-lg">
+                            <p class="text-sm text-gray-600 mb-2">Link Undangan:</p>
+                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                                <input type="text" id="generated-link" readonly 
+                                    class="flex-1 px-3 py-3 bg-white border border-gray-300 rounded-lg text-sm break-all sm:break-normal" style="min-width:0; word-break:break-all;">
+                                <button onclick="copyGeneratedLink()" class="bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 text-base w-full sm:w-auto" style="min-width:44px;">
+                                    <i class="fas fa-copy mr-2"></i>Salin
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-50 p-3 md:p-4 rounded-lg">
+                            <p class="text-sm text-gray-600 mb-2">Preview Undangan:</p>
+                            <div id="invitation-preview" class="bg-white p-3 md:p-4 rounded-lg border border-gray-200 min-h-[150px] text-sm">
+                                <!-- Preview will be inserted via JS -->
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <button onclick="shareViaWA()" class="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 text-sm">
+                                <i class="fab fa-whatsapp mr-2"></i>Share WhatsApp
+                            </button>
+                            <button onclick="copyGeneratedLink()" class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 text-sm">
+                                <i class="fas fa-link mr-2"></i>Salin Link
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Generated Links History -->
+            <div class="mt-6 bg-white rounded-xl shadow-md p-4 md:p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Riwayat Generate</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Link</th>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body" class="divide-y divide-gray-200">
+                            <!-- History will be inserted via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal for Add/Edit Tamu -->
+    <div id="tamuModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md mx-auto">
+            <div class="px-4 md:px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-lg font-semibold text-gray-800" id="modal-title">Tambah Tamu</h3>
+                <button onclick="closeTamuModal()" class="text-gray-400 hover:text-gray-600 focus:outline-none">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="tamuForm" class="p-4 md:p-6 space-y-4">
+                <input type="hidden" id="tamu-id">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nama Lengkap</label>
+                    <input type="text" id="nama" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500 text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">No. WhatsApp</label>
+                    <input type="text" id="wa" placeholder="081234567890"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500 text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                    <select id="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500 text-sm">
+                        <option value="pending">Pending</option>
+                        <option value="hadir">Hadir</option>
+                        <option value="tidak">Tidak Hadir</option>
+                    </select>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-2 justify-end">
+                    <button type="button" onclick="closeTamuModal()" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none text-sm order-2 sm:order-1">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none text-sm order-1 sm:order-2">
+                        Simpan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ==================== ALL FUNCTIONS IN ONE FILE ====================
+        
+        // ==================== GLOBAL VARIABLES ====================
+        const messageTemplates = {
+            formal: {
+                title: 'Dengan hormat,',
+                body: 'Kami mengundang Bapak/Ibu/Saudara/i untuk menghadiri acara Khitanan putra kami:',
+                closing: 'Atas kehadiran dan doa restunya, kami ucapkan terima kasih.'
+            },
+            santai: {
+                title: 'Hai,',
+                body: 'Yuk meramaikan acara Khitanan adik kita:',
+                closing: 'Sampai ketemu di acaranya ya!'
+            },
+            islami: {
+                title: 'Bismillahirrahmanirrahim,',
+                body: 'Dengan memohon ridho Allah SWT, kami mengundang untuk menghadiri acara Khitanan putra kami:',
+                closing: 'Semoga kehadiran dan doa restunya menjadi berkah. Jazakumullah khairan.'
+            }
+        };
+
+        // ==================== UTILITY FUNCTIONS ====================
+        function showNotification(message, type = 'info') {
+            const existingNotification = document.querySelector('.notification');
+            if (link) {
+                copyToClipboard(link, 'Link undangan berhasil disalin!');
+            } else {
+                showNotification('Generate link terlebih dahulu!', 'error');
+            }
+        }
+
+        function shareViaWA() {
+            const link = document.getElementById('generated-link')?.value;
+            const guestId = document.getElementById('guest-select')?.value;
+            
+            if (!link || !guestId) {
+                showNotification('Generate link terlebih dahulu!', 'error');
+                return;
+            }
+            
+            const guest = getGuests().find(g => g.id === guestId);
+            if (!guest?.wa) {
+                showNotification('Nomor WhatsApp tidak tersedia!', 'error');
+                return;
+            }
+            
+            const message = `Assalamualaikum *${guest.nama}*, \n\nBerikut adalah link undangan digital Khitanan:\n\n${link}\n\nMohon konfirmasi kehadiran melalui link di atas.\n\nTerima kasih 🙏`;
+            window.open(`https://wa.me/${guest.wa.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+            
+            const history = getGeneratedHistory().find(h => h.link === link);
+            if (history) { 
+                history.status = 'terkirim'; 
+                setStorage('generatedHistory', getGeneratedHistory()); 
+                loadHistory(); 
+            }
+        }
+
+        function loadHistory() {
+            const history = getGeneratedHistory();
+            const tbody = document.getElementById('history-table-body');
+            if (!tbody) return;
+            
+            if (history.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">Belum ada riwayat generate</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = history.slice(0, 10).map(item => `
+                <tr>
+                    <td class="px-4 md:px-6 py-4">${formatDate(item.tanggal)}</td>
+                    <td class="px-4 md:px-6 py-4 font-medium">${escapeHtml(item.nama)}</td>
+                    <td class="px-4 md:px-6 py-4">
+                        <div class="flex items-center gap-2">
+                            <input type="text" value="${item.link}" readonly class="text-xs bg-gray-50 px-2 py-1 rounded border w-24 md:w-40">
+                            <button onclick="copyToClipboard('${item.link}', 'Link disalin!')" class="text-blue-600 hover:text-blue-800" title="Salin link"><i class="fas fa-copy"></i></button>
+                        </div>
+                    </td>
+                    <td class="px-4 md:px-6 py-4">
+                        <span class="${item.status === 'terkirim' ? 'badge-hadir' : 'badge-pending'}">${item.status}</span>
+                    </td>
+                    <td class="px-4 md:px-6 py-4">
+                        <div class="flex items-center gap-2">
+                            <button onclick="shareWAFromHistory('${item.id}')" class="text-green-600 hover:text-green-800" title="Kirim WhatsApp"><i class="fab fa-whatsapp"></i></button>
+                            <button onclick="deleteHistory('${item.id}')" class="text-red-600 hover:text-red-800" title="Hapus"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function shareWAFromHistory(id) {
+            const item = getGeneratedHistory().find(h => h.id === id);
+            if (!item?.wa) {
+                showNotification('Nomor WhatsApp tidak tersedia!', 'error');
+                return;
+            }
+            
+            const message = `Assalamualaikum *${item.nama}*, \n\nBerikut adalah link undangan digital Khitanan:\n\n${item.link}\n\nMohon konfirmasi kehadiran melalui link di atas.\n\nTerima kasih 🙏`;
+            window.open(`https://wa.me/${item.wa.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+            
+            item.status = 'terkirim';
+            setStorage('generatedHistory', getGeneratedHistory());
+            loadHistory();
+        }
+
+        function deleteHistory(id) {
+            if (confirm('Hapus dari riwayat?')) {
+                setStorage('generatedHistory', getGeneratedHistory().filter(h => h.id !== id));
+                loadHistory();
+                showNotification('Riwayat dihapus!', 'success');
+            }
+        }
+
+        function refreshData() {
+            loadDashboardStats();
+            loadRecentGuests();
+            loadCrudTable();
+            loadGuestSelect();
+            loadHistory();
+            showNotification('Data berhasil di-refresh!', 'success');
+        }
+
+        // ==================== INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Admin panel loaded');
+            
+            // Load sample data
+            loadSampleData();
+            
+            // Mobile menu toggle
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            
+            if (mobileMenuButton) {
+                mobileMenuButton.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+
+            // Close mobile menu when clicking outside
+            document.addEventListener('click', function(e) {
+                if (mobileMenu && !mobileMenu.contains(e.target) && !mobileMenuButton?.contains(e.target)) {
+                    mobileMenu.classList.add('hidden');
+                }
+            });
+
+            // Navigasi menu - FIXED
+            const navLinks = document.querySelectorAll('.nav-link');
+            console.log('Found nav links:', navLinks.length);
+            
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const sectionId = this.getAttribute('data-section');
+                    console.log('Nav link clicked:', sectionId);
+                    
+                    if (sectionId) {
+                        showSection(sectionId);
+                        
+                        // Close mobile menu if open
+                        if (mobileMenu) {
+                            mobileMenu.classList.add('hidden');
+                        }
+                    }
+                });
+            });
+
+            // Form submit for tamu
+            const tamuForm = document.getElementById('tamuForm');
+            if (tamuForm) {
+                tamuForm.addEventListener('submit', saveTamu);
+            }
+            
+            // Generator form submit
+            const generatorForm = document.getElementById('generator-form');
+            if (generatorForm) {
+                generatorForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const guestId = document.getElementById('guest-select').value;
+                    const template = document.getElementById('message-template').value;
+                    
+                    if (!guestId) {
+                        showNotification('Pilih tamu terlebih dahulu!', 'error');
+                        return;
+                    }
+                    
+                    const guest = getGuests().find(g => g.id === guestId);
+                    if (guest) generateInvitation(guest, template);
+                });
+            }
+
+            // Search and filter listeners
+            const searchInput = document.getElementById('search-input');
+            const filterSelect = document.getElementById('filter-status');
+            
+            if (searchInput) {
+                searchInput.addEventListener('input', debounce(loadCrudTable, 300));
+            }
+            
+            if (filterSelect) {
+                filterSelect.addEventListener('change', loadCrudTable);
+            }
+
+            // Show dashboard by default
+            showSection('dashboard');
+        });
+<script src="js/admin.js"></script>
+    </script>
+<script src="js/admin.js"></script>
+</body>
+</html>
