@@ -1,0 +1,12 @@
+# GitHub Pages Configuration
+
+This file is used to ensure GitHub Pages can serve the site from the /undangan-khitan folder.
+
+- Untuk menampilkan undangan secara online, pastikan di GitHub Pages Settings:
+  - Source: main branch
+  - Folder: /undangan-khitan
+
+Akses undangan di:
+https://sardifahmiidris.github.io/Khitanan-Mifzal-Kianu-Alfaris/undangan-khitan/
+
+Jika ingin akses dari root, pindahkan semua isi folder undangan-khitan ke root repo.

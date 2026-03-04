@@ -23,28 +23,48 @@ const targetDonation = 5000000;
 window.onload = function() {
     generateStars('starField', 150);
     generateStars('mainStarField', 100);
-    
-    // Check if URL has parameter to auto-open
+
+    // Ambil nama tamu dari parameter URL jika ada
     const urlParams = new URLSearchParams(window.location.search);
+    const guestSlug = urlParams.get('nama');
+    let guestName = '';
+    if (guestSlug) {
+        // Coba decode nama, hilangkan id unik di belakang jika ada
+        guestName = decodeURIComponent(guestSlug).replace(/-([a-z0-9]{6})$/, '').replace(/-/g, ' ');
+        // Capitalize tiap kata
+        guestName = guestName.replace(/\b\w/g, c => c.toUpperCase());
+        // Simpan ke localStorage agar bisa diakses saat openInvitation
+        localStorage.setItem('guestName', guestName);
+        // Tampilkan di cover jika langsung dibuka
+        const guestNameCover = document.getElementById('guestNameCover');
+        if (guestNameCover) {
+            guestNameCover.textContent = guestName;
+            guestNameCover.style.display = 'block';
+        }
+    } else {
+        localStorage.removeItem('guestName');
+    }
+
+    // Check if URL has parameter to auto-open
     if (urlParams.get('open') === 'true') {
         setTimeout(openInvitation, 500);
     }
-    
+
     // Initialize donation progress
     updateDonationProgress();
-    
+
     // Preload dan autoplay audio
     if (audio) {
         audio.load();
         audio.volume = 1;
         audio.play().catch(()=>{});
     }
-    
+
     // Add touch event for mobile
     if ('ontouchstart' in window) {
         document.body.classList.add('touch-device');
     }
-    
+
     // Setup intersection observer
     setupIntersectionObserver();
 };
