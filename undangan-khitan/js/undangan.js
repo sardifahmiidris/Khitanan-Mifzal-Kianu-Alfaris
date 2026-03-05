@@ -24,25 +24,27 @@ window.onload = function() {
     generateStars('starField', 150);
     generateStars('mainStarField', 100);
 
-    // Ambil nama tamu dari parameter URL jika ada
+    // Ambil nama tamu dari parameter URL atau localStorage
     const urlParams = new URLSearchParams(window.location.search);
     const guestSlug = urlParams.get('nama');
     let guestName = '';
     if (guestSlug) {
-        // Coba decode nama, hilangkan id unik di belakang jika ada
-        guestName = decodeURIComponent(guestSlug).replace(/-([a-z0-9]{6})$/, '').replace(/-/g, ' ');
-        // Capitalize tiap kata
+        // Ambil slug tanpa id unik di belakang
+        let slug = decodeURIComponent(guestSlug).replace(/-([a-z0-9]{6})$/, '');
+        // Ganti - menjadi spasi, lalu trim
+        guestName = slug.replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+        // Capitalize tiap kata, tapi biarkan karakter spesial tetap
         guestName = guestName.replace(/\b\w/g, c => c.toUpperCase());
-        // Simpan ke localStorage agar bisa diakses saat openInvitation
         localStorage.setItem('guestName', guestName);
-        // Tampilkan di cover jika langsung dibuka
-        const guestNameCover = document.getElementById('guestNameCover');
-        if (guestNameCover) {
-            guestNameCover.textContent = guestName;
-            guestNameCover.style.display = 'block';
-        }
     } else {
-        localStorage.removeItem('guestName');
+        guestName = localStorage.getItem('guestName') || '';
+    }
+    const guestNameCover = document.getElementById('guestNameCover');
+    if (guestName && guestNameCover) {
+        guestNameCover.textContent = guestName;
+        guestNameCover.style.display = 'block';
+    } else if (guestNameCover) {
+        guestNameCover.style.display = 'none';
     }
 
     // Check if URL has parameter to auto-open
