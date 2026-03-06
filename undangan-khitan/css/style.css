@@ -1,3 +1,15 @@
+/* Highlight animasi untuk item baru (ucapan & donasi) */
+.highlight-new {
+    animation: highlightFade 2s;
+    background: linear-gradient(90deg, #fffbe6 0%, #fcf6ba 100%);
+    box-shadow: 0 0 10px 2px #D4AF37;
+}
+
+@keyframes highlightFade {
+    0% { background: #fffbe6; box-shadow: 0 0 20px 4px #D4AF37; }
+    80% { background: #fcf6ba; box-shadow: 0 0 10px 2px #D4AF37; }
+    100% { background: none; box-shadow: none; }
+}
 /* Perbaiki warna dropdown metode pembayaran agar lebih terlihat */
 select, select option {
     color: #fff !important;

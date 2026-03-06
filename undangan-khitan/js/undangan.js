@@ -46,6 +46,15 @@ window.onload = function() {
     } else if (guestNameCover) {
         guestNameCover.style.display = 'none';
     }
+    // Personalisasi ucapan selamat di bawah
+    const personalWelcome = document.getElementById('personalWelcome');
+    if (personalWelcome) {
+        if (guestName) {
+            personalWelcome.textContent = `Selamat Datang, ${guestName}! Semoga acara ini membawa keberkahan untuk kita semua.`;
+        } else {
+            personalWelcome.textContent = 'Selamat Datang di Khitanan Mifzal Kianu Alfaris';
+        }
+    }
 
     // Check if URL has parameter to auto-open
     if (urlParams.get('open') === 'true') {
@@ -54,6 +63,10 @@ window.onload = function() {
 
     // Initialize donation progress
     updateDonationProgress();
+    // Jalankan listener donasi real-time
+    listenDonationsRealtime();
+    // Jalankan listener ucapan real-time
+    listenUcapanRealtime();
 
     // Preload dan autoplay audio
     if (audio) {
@@ -343,96 +356,58 @@ function quickDonate() {
 
 function submitDonation(event) {
     event.preventDefault();
-    
     const name = document.getElementById('donorName')?.value;
     const amount = parseInt(document.getElementById('donorAmount')?.value);
     const message = document.getElementById('donorMessage')?.value;
-    
     if (!name || !amount) return;
-    
-    addDonationToList(name, amount, message);
-    updateTotalDonation(amount);
-    
+    // Kirim donasi ke Firebase agar real-time
+    firebase.database().ref('donations').push({
+        name,
+        amount,
+        message,
+        timestamp: Date.now()
+    });
     hideDonationModal();
     showNotification('Terima kasih atas donasinya!', 'success');
-    
     document.getElementById('donationForm')?.reset();
 }
 
-function addDonationToList(name, amount, message) {
+// Ambil donasi real-time dari Firebase
+function listenDonationsRealtime() {
     const list = document.getElementById('donationList');
     if (!list) return;
-    
-    const donationItem = document.createElement('div');
-    donationItem.className = 'donation-item';
-    
-    const formattedAmount = new Intl.NumberFormat('id-ID').format(amount);
-    
-    donationItem.innerHTML = `
-        <div class="flex justify-between items-start">
-            <div>
-                <p class="text-white font-medium text-sm">${name}</p>
-                <p class="text-[#D4AF37] text-xs">Rp ${formattedAmount}</p>
-            </div>
-            <p class="text-gray-400 text-[10px]">baru saja</p>
-        </div>
-        ${message ? `<p class="text-gray-400 text-xs mt-1">"${message}"</p>` : ''}
-    `;
-    
-    list.insertBefore(donationItem, list.firstChild);
-    
-    if (list.children.length > 10) {
-        list.removeChild(list.lastChild);
-    }
-}
-
-function updateTotalDonation(amount) {
-    totalDonation += amount;
-    
-    const totalEl = document.getElementById('totalDonation');
-    const progressEl = document.getElementById('donationProgress');
-    
-    if (totalEl) {
-        totalEl.textContent = `Rp ${new Intl.NumberFormat('id-ID').format(totalDonation)}`;
-    }
-    
-    const percentage = Math.min((totalDonation / targetDonation) * 100, 100);
-    if (progressEl) {
-        progressEl.style.width = `${percentage}%`;
-    }
-    
-    if (percentage >= 100) {
-        showNotification('Alhamdulillah! Target donasi tercapai!', 'success');
-    }
-}
-
-function updateDonationProgress() {
-    const percentage = (totalDonation / targetDonation) * 100;
-    const progressEl = document.getElementById('donationProgress');
-    if (progressEl) {
-        progressEl.style.width = `${percentage}%`;
-    }
+    firebase.database().ref('donations').orderByChild('timestamp').limitToLast(10)
+        .on('value', function(snapshot) {
+            list.innerHTML = '';
+            const arr = [];
+            snapshot.forEach(child => arr.push(child.val()));
+            arr.reverse().forEach(donation => {
+                addDonationToList(donation.name, donation.amount, donation.message);
+            });
+        });
 }
 
 // ==================== RSVP FUNCTIONS ====================
 function submitRSVP(event) {
     event.preventDefault();
-    
     const name = document.getElementById('rsvpName')?.value;
     const guests = document.getElementById('rsvpGuests')?.value;
     const status = document.getElementById('rsvpStatus')?.value;
     const message = document.getElementById('rsvpMessage')?.value;
-    
     if (!name || !guests || !status) {
         showNotification('Mohon lengkapi data', 'error');
         return;
     }
-    
     const submitBtn = event.target.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
     submitBtn.innerHTML = '<span class="spinner"></span> Mengirim...';
     submitBtn.disabled = true;
-    
+    // Kirim ucapan ke Firebase agar real-time
+    firebase.database().ref('ucapan').push({
+        name,
+        message,
+        timestamp: Date.now()
+    });
     setTimeout(() => {
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
@@ -447,20 +422,32 @@ function submitRSVP(event) {
             statusResult.textContent = statusText;
             statusResult.style.display = 'block';
         }
-        // Tambahkan ucapan ke daftar ucapan tamu
-        var ucapanList = document.getElementById('ucapanKerabatList');
-        if (ucapanList) {
-            var ucapanDiv = document.createElement('div');
-            ucapanDiv.className = 'glass-card rounded-xl p-4 md:p-6 text-left';
-            ucapanDiv.innerHTML = `
-                <i class="fas fa-quote-left text-[#D4AF37] mb-2"></i>
-                <p class="italic text-gray-300 text-sm md:text-base mb-4">${message ? '"' + message + '"' : ''}</p>
-                <p class="text-[#D4AF37] font-semibold">- ${name}</p>
-            `;
-            ucapanList.insertBefore(ucapanDiv, ucapanList.firstChild);
-        }
         event.target.reset();
     }, 1000);
+}
+
+// Ambil ucapan real-time dari Firebase
+function listenUcapanRealtime() {
+    const ucapanList = document.getElementById('ucapanKerabatList');
+    if (!ucapanList) return;
+    firebase.database().ref('ucapan').orderByChild('timestamp').limitToLast(10)
+        .on('value', function(snapshot) {
+            ucapanList.innerHTML = '';
+            const arr = [];
+            snapshot.forEach(child => arr.push(child.val()));
+            arr.reverse().forEach(ucapan => {
+                var ucapanDiv = document.createElement('div');
+                ucapanDiv.className = 'glass-card rounded-xl p-4 md:p-6 text-left highlight-new';
+                ucapanDiv.innerHTML = `
+                    <i class="fas fa-quote-left text-[#D4AF37] mb-2"></i>
+                    <p class="italic text-gray-300 text-sm md:text-base mb-4">${ucapan.message ? '"' + ucapan.message + '"' : ''}</p>
+                    <p class="text-[#D4AF37] font-semibold">- ${ucapan.name}</p>
+                `;
+                ucapanList.appendChild(ucapanDiv);
+                setTimeout(() => ucapanDiv.classList.remove('highlight-new'), 2000);
+            });
+            ucapanList.scrollTop = 0;
+        });
 }
 
 // ==================== UTILITY FUNCTIONS ====================
@@ -537,3 +524,51 @@ document.querySelectorAll('.modal-overlay').forEach(modal => {
         e.preventDefault();
     }, { passive: false });
 });
+
+// ==================== GALERI & LIVE PHOTO ====================
+if (typeof firebase !== 'undefined') {
+    // Upload foto
+    const uploadForm = document.getElementById('uploadPhotoForm');
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('photoInput');
+            const captionInput = document.getElementById('photoCaption');
+            const file = fileInput.files[0];
+            if (!file) return showNotification('Pilih foto terlebih dahulu!', 'error');
+            const fileName = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+            const storageRef = firebase.storage().ref('gallery/' + fileName);
+            const uploadTask = storageRef.put(file);
+            uploadTask.on('state_changed', null, function(error) {
+                showNotification('Upload gagal: ' + error.message, 'error');
+            }, function() {
+                uploadTask.snapshot.ref.getDownloadURL().then(function(url) {
+                    firebase.database().ref('gallery').push({
+                        url,
+                        caption: captionInput.value,
+                        timestamp: Date.now()
+                    });
+                    showNotification('Foto berhasil diupload!', 'success');
+                    fileInput.value = '';
+                    captionInput.value = '';
+                });
+            });
+        });
+    }
+    // Tampilkan galeri real-time
+    const galleryGrid = document.getElementById('galleryGrid');
+    if (galleryGrid) {
+        firebase.database().ref('gallery').orderByChild('timestamp').limitToLast(24)
+            .on('value', function(snapshot) {
+                galleryGrid.innerHTML = '';
+                const arr = [];
+                snapshot.forEach(child => arr.push(child.val()));
+                arr.reverse().forEach(photo => {
+                    const div = document.createElement('div');
+                    div.className = 'rounded-lg overflow-hidden shadow-lg bg-white/10 border border-[#D4AF37]/30';
+                    div.innerHTML = `<img src="${photo.url}" alt="foto tamu" class="w-full h-32 md:h-40 object-cover"><div class="p-2 text-xs text-white text-center">${photo.caption || ''}</div>`;
+                    galleryGrid.appendChild(div);
+                });
+            });
+    }
+}

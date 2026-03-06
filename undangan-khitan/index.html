@@ -189,6 +189,9 @@
                     <button onclick="refreshData()" class="text-green-600 hover:text-green-700" title="Refresh data">
                         <i class="fas fa-sync-alt"></i>
                     </button>
+                    <button onclick="exportAllData()" class="ml-4 text-blue-600 hover:text-blue-700 border border-blue-500 rounded px-3 py-1 text-sm font-semibold bg-white" title="Export Data">
+                        <i class="fas fa-file-export mr-1"></i>Export Data
+                    </button>
                 </div>
             </div>
             
@@ -202,6 +205,30 @@
                         </div>
                         <div class="bg-green-100 p-2 md:p-3 rounded-full">
                             <i class="fas fa-users text-green-600 text-xl md:text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-xs md:text-sm">Total Donasi</p>
+                            <p class="text-2xl md:text-3xl font-bold text-yellow-600" id="total-donasi">Rp 0</p>
+                        </div>
+                        <div class="bg-yellow-100 p-2 md:p-3 rounded-full">
+                            <i class="fas fa-coins text-yellow-600 text-xl md:text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-xs md:text-sm">Jumlah Ucapan</p>
+                            <p class="text-2xl md:text-3xl font-bold text-blue-600" id="total-ucapan">0</p>
+                        </div>
+                        <div class="bg-blue-100 p-2 md:p-3 rounded-full">
+                            <i class="fas fa-comments text-blue-600 text-xl md:text-2xl"></i>
                         </div>
                     </div>
                 </div>

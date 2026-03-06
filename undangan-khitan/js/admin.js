@@ -108,6 +108,52 @@ function loadDashboardStats() {
     document.getElementById('total-hadir').textContent = guests.filter(g => g.status === 'hadir').length;
     document.getElementById('total-tidak-hadir').textContent = guests.filter(g => g.status === 'tidak').length;
     document.getElementById('total-terkirim').textContent = guests.filter(g => g.linkTerkirim).length;
+
+    // Statistik donasi & ucapan dari Firebase
+    loadFirebaseStats();
+}
+
+// Ambil statistik donasi & ucapan dari Firebase
+function loadFirebaseStats() {
+    // Pastikan Firebase sudah di-load di index.html
+    if (typeof firebase === 'undefined') return;
+    // Total Donasi
+    firebase.database().ref('donations').on('value', function(snapshot) {
+        let total = 0;
+        snapshot.forEach(child => {
+            const val = child.val();
+            if (val.amount) total += parseInt(val.amount);
+        });
+        document.getElementById('total-donasi').textContent = 'Rp ' + total.toLocaleString('id-ID');
+    });
+    // Jumlah Ucapan
+    firebase.database().ref('ucapan').on('value', function(snapshot) {
+        let count = 0;
+        snapshot.forEach(() => count++);
+        document.getElementById('total-ucapan').textContent = count;
+    });
+}
+
+// Notifikasi real-time donasi & ucapan baru
+if (typeof firebase !== 'undefined') {
+    let lastDonationKey = null;
+    let lastUcapanKey = null;
+    // Donasi
+    firebase.database().ref('donations').limitToLast(1).on('child_added', function(snapshot) {
+        if (lastDonationKey && snapshot.key !== lastDonationKey) {
+            const d = snapshot.val();
+            showNotification(`Donasi baru dari ${d.name} sejumlah Rp ${parseInt(d.amount).toLocaleString('id-ID')}`, 'success');
+        }
+        lastDonationKey = snapshot.key;
+    });
+    // Ucapan
+    firebase.database().ref('ucapan').limitToLast(1).on('child_added', function(snapshot) {
+        if (lastUcapanKey && snapshot.key !== lastUcapanKey) {
+            const u = snapshot.val();
+            showNotification(`Ucapan baru dari ${u.name}`, 'info');
+        }
+        lastUcapanKey = snapshot.key;
+    });
 }
 
 function loadRecentGuests() {
@@ -478,4 +524,52 @@ document.addEventListener('DOMContentLoaded', function() {
 
     showSection('dashboard');
     updateActiveNav('dashboard');
+    // Export data global
+    window.exportAllData = exportAllData;
 });
+
+// Export data tamu, donasi, ucapan ke CSV
+function exportAllData() {
+    // Export tamu dari localStorage
+    const guests = getGuests();
+    let csvTamu = 'Nama,WA,Status,LinkTerkirim\n';
+    guests.forEach(g => {
+        csvTamu += `"${g.nama}","${g.wa}","${g.status}","${g.linkTerkirim ? 'Ya' : 'Tidak'}"\n`;
+    });
+    downloadCSV(csvTamu, 'data_tamu.csv');
+
+    // Export donasi dari Firebase
+    if (typeof firebase !== 'undefined') {
+        firebase.database().ref('donations').once('value', function(snapshot) {
+            let csvDonasi = 'Nama,Nominal,Pesan,Timestamp\n';
+            snapshot.forEach(child => {
+                const d = child.val();
+                csvDonasi += `"${d.name}","${d.amount}","${d.message || ''}","${d.timestamp || ''}"\n`;
+            });
+            downloadCSV(csvDonasi, 'data_donasi.csv');
+        });
+        // Export ucapan dari Firebase
+        firebase.database().ref('ucapan').once('value', function(snapshot) {
+            let csvUcapan = 'Nama,Pesan,Timestamp\n';
+            snapshot.forEach(child => {
+                const u = child.val();
+                csvUcapan += `"${u.name}","${u.message || ''}","${u.timestamp || ''}"\n`;
+            });
+            downloadCSV(csvUcapan, 'data_ucapan.csv');
+        });
+    }
+}
+
+function downloadCSV(csv, filename) {
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, 100);
+}
