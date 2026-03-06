@@ -62,7 +62,7 @@ window.onload = function() {
     }
 
     // Initialize donation progress
-    updateDonationProgress();
+    // updateDonationProgress(); // Disabled: function not defined
     // Jalankan listener donasi real-time
     listenDonationsRealtime();
     // Jalankan listener ucapan real-time
@@ -130,40 +130,6 @@ document.getElementById('coverPage')?.addEventListener('click', function(e) {
         openInvitation();
     }
 });
-
-// ==================== MUSIC FUNCTIONS ====================
-function toggleMusic() {
-    const icon = document.getElementById('musicIcon');
-    if (!audio) return;
-    if (isMusicPlaying) {
-        audio.pause();
-        if (icon) icon.className = 'fas fa-music text-white';
-        showNotification('Music paused', 'info');
-    } else {
-        audio.play()
-            .then(() => {
-                if (icon) icon.className = 'fas fa-pause text-white';
-                showNotification('Music playing', 'success');
-            })
-            .catch(() => {
-                showNotification('Click again to play music', 'info');
-            });
-    }
-    isMusicPlaying = !isMusicPlaying;
-}
-
-// ==================== AUTO SCROLL FUNCTIONS ====================
-function toggleAutoScroll() {
-    // Fitur auto scroll di-nonaktifkan
-    return;
-}
-
-function startAutoScroll() {
-    scrollInterval = setInterval(() => {
-        currentSection = (currentSection + 1) % sections.length;
-        scrollToSection(currentSection);
-    }, 5000);
-}
 
 function stopAutoScroll() {
     if (scrollInterval) clearInterval(scrollInterval);
