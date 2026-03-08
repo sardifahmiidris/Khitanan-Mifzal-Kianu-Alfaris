@@ -373,23 +373,31 @@ function submitRSVP(event) {
         name,
         message,
         timestamp: Date.now()
-    });
-    setTimeout(() => {
+    }, function(error) {
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
-        showNotification('Terima kasih atas konfirmasinya!', 'success');
-        // Tampilkan status kehadiran tamu
-        var statusResult = document.getElementById('rsvpStatusResult');
-        if (statusResult) {
-            let statusText = '';
-            if (status === 'hadir') statusText = 'Anda akan HADIR pada acara.';
-            else if (status === 'tidak') statusText = 'Anda TIDAK dapat hadir.';
-            else if (status === 'ragu') statusText = 'Anda MASIH RAGU untuk hadir.';
-            statusResult.textContent = statusText;
-            statusResult.style.display = 'block';
+        if (error) {
+            showNotification('Gagal mengirim ucapan: ' + error.message, 'error');
+        } else {
+            showNotification('Terima kasih atas konfirmasinya!', 'success');
+            // Tampilkan status kehadiran tamu
+            var statusResult = document.getElementById('rsvpStatusResult');
+            if (statusResult) {
+                let statusText = '';
+                if (status === 'hadir') statusText = 'Anda akan HADIR pada acara.';
+                else if (status === 'tidak') statusText = 'Anda TIDAK dapat hadir.';
+                else if (status === 'ragu') statusText = 'Anda MASIH RAGU untuk hadir.';
+                statusResult.textContent = statusText;
+                statusResult.style.display = 'block';
+            }
+            event.target.reset();
+            // Scroll otomatis ke ucapan terbaru
+            setTimeout(() => {
+                const ucapanList = document.getElementById('ucapanKerabatList');
+                if (ucapanList) ucapanList.scrollTop = 0;
+            }, 500);
         }
-        event.target.reset();
-    }, 1000);
+    });
 }
 
 // Ambil ucapan real-time dari Firebase
@@ -412,6 +420,7 @@ function listenUcapanRealtime() {
                 ucapanList.appendChild(ucapanDiv);
                 setTimeout(() => ucapanDiv.classList.remove('highlight-new'), 2000);
             });
+            // Scroll otomatis ke ucapan terbaru setiap update
             ucapanList.scrollTop = 0;
         });
 }
@@ -493,48 +502,6 @@ document.querySelectorAll('.modal-overlay').forEach(modal => {
 
 // ==================== GALERI & LIVE PHOTO ====================
 if (typeof firebase !== 'undefined') {
-    // Upload foto
-    const uploadForm = document.getElementById('uploadPhotoForm');
-    if (uploadForm) {
-        uploadForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const fileInput = document.getElementById('photoInput');
-            const captionInput = document.getElementById('photoCaption');
-            const file = fileInput.files[0];
-            if (!file) return showNotification('Pilih foto terlebih dahulu!', 'error');
-            const fileName = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9.]/g, '_');
-            const storageRef = firebase.storage().ref('gallery/' + fileName);
-            const uploadTask = storageRef.put(file);
-            uploadTask.on('state_changed', null, function(error) {
-                showNotification('Upload gagal: ' + error.message, 'error');
-            }, function() {
-                uploadTask.snapshot.ref.getDownloadURL().then(function(url) {
-                    firebase.database().ref('gallery').push({
-                        url,
-                        caption: captionInput.value,
-                        timestamp: Date.now()
-                    });
-                    showNotification('Foto berhasil diupload!', 'success');
-                    fileInput.value = '';
-                    captionInput.value = '';
-                });
-            });
-        });
-    }
-    // Tampilkan galeri real-time
-    const galleryGrid = document.getElementById('galleryGrid');
-    if (galleryGrid) {
-        firebase.database().ref('gallery').orderByChild('timestamp').limitToLast(24)
-            .on('value', function(snapshot) {
-                galleryGrid.innerHTML = '';
-                const arr = [];
-                snapshot.forEach(child => arr.push(child.val()));
-                arr.reverse().forEach(photo => {
-                    const div = document.createElement('div');
-                    div.className = 'rounded-lg overflow-hidden shadow-lg bg-white/10 border border-[#D4AF37]/30';
-                    div.innerHTML = `<img src="${photo.url}" alt="foto tamu" class="w-full h-32 md:h-40 object-cover"><div class="p-2 text-xs text-white text-center">${photo.caption || ''}</div>`;
-                    galleryGrid.appendChild(div);
-                });
-            });
-    }
+    // ...upload foto dihapus...
+    // ...tampilan galeri dihapus...
 }

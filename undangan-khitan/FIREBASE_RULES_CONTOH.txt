@@ -1,0 +1,20 @@
+# Contoh rules Firebase agar upload & galeri foto bisa diakses publik
+
+# Storage
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /gallery/{allPaths=**} {
+      allow read, write: if true;
+    }
+  }
+}
+
+# Database
+{
+  "rules": {
+    ".read": true,
+    ".write": true
+  }
+}
+
+# Setelah update rules di Firebase Console, upload & galeri akan berfungsi untuk semua user (termasuk di GitHub Pages).
