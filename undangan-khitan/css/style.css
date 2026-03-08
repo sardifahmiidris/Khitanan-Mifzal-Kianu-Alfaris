@@ -1,3 +1,80 @@
+/* Marquee wrapper untuk animasi berjalan mulus di HP */
+.marquee-wrapper {
+    position: relative;
+    overflow: hidden;
+    width: 100vw;
+    max-width: 100vw;
+    height: 2.2em;
+    border-radius: 9999px;
+    background: #2563eb;
+}
+.marquee {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: inline-block;
+    white-space: nowrap;
+    font-size: 0.85rem;
+    color: #fff;
+    font-weight: bold;
+    padding: 0.25rem 0.5rem;
+    will-change: transform;
+    pointer-events: none;
+    animation: marquee-left 48s linear infinite;
+    -webkit-animation: marquee-left 48s linear infinite;
+}
+@-webkit-keyframes marquee-left {
+    0% {
+        -webkit-transform: translateX(0%);
+                        transform: translateX(0%);
+    }
+    100% {
+        -webkit-transform: translateX(-100%);
+                        transform: translateX(-100%);
+    }
+}
+.marquee {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: inline-block;
+    white-space: nowrap;
+    font-size: 0.85rem;
+    color: #fff;
+    font-weight: bold;
+    padding: 0.25rem 0.5rem;
+    will-change: transform;
+    pointer-events: none;
+    animation: marquee-left 48s linear infinite;
+}
+@keyframes marquee-left {
+    0% {
+        transform: translateX(0%);
+    }
+    100% {
+        transform: translateX(-100%);
+    }
+}
+/* Animasi marquee berjalan dari kanan ke kiri */
+
+.marquee {
+    display: inline-block;
+    white-space: nowrap;
+    min-width: 100%;
+    width: auto;
+    will-change: transform;
+    animation: marquee-left 48s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes marquee-left {
+    0% {
+        transform: translateX(0%);
+    }
+    100% {
+        transform: translateX(-100%);
+    }
+}
 /* Highlight animasi untuk item baru (ucapan & donasi) */
 .highlight-new {
     animation: highlightFade 2s;

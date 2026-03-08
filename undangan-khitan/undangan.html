@@ -101,10 +101,55 @@ const firebaseConfig = {
             </div>
             
             <div class="absolute bottom-5 md:bottom-10 left-0 right-0 text-center text-white/30 text-xs md:text-sm">
-                <i class="fas fa-chevron-down animate-bounce block mb-2"></i>
-                <button id="personalWelcome" class="w-full bg-[#2563eb] text-white font-bold py-1 px-2 rounded-full flex justify-center items-center welcome-single-line no-scroll-effect" style="white-space:nowrap;text-overflow:ellipsis;max-width:100vw;font-size:0.85rem;border:none;">
-                    Selamat Datang di Khitanan Mifzal Kianu Alfaris
-                </button>
+                                <i class="fas fa-chevron-down animate-bounce block mb-2"></i>
+                                <div class="marquee-wrapper">
+                                    <div class="marquee" id="marquee1">
+                                        Selamat Datang di Khitanan Mifzal Kianu Alfaris &nbsp;•&nbsp; Selamat Datang di Khitanan Mifzal Kianu Alfaris
+                                    </div>
+                                                                <script>
+                                                                // Marquee berjalan di semua device/layar (CSS utama, JS fallback jika perlu)
+                                                                (function() {
+                                                                    function cssMarqueeWorks() {
+                                                                        var el = document.createElement('div');
+                                                                        el.style.animation = 'marquee-left 1s linear infinite';
+                                                                        return el.style.animationName === 'marquee-left';
+                                                                    }
+                                                                    function startJsMarquee() {
+                                                                        var m1 = document.getElementById('marquee1');
+                                                                        var wrapper = document.getElementById('marqueeWrapper');
+                                                                        // Hanya nonaktifkan animasi jika memang tidak support
+                                                                        if (window.getComputedStyle(m1).animationName !== 'marquee-left') {
+                                                                            m1.style.animation = 'none';
+                                                                            m1.style.webkitAnimation = 'none';
+                                                                        }
+                                                                        m1.style.left = '0px';
+                                                                        m1.style.transform = 'none';
+                                                                        wrapper.style.overflow = 'hidden';
+                                                                        wrapper.style.height = m1.scrollHeight + 'px';
+                                                                        m1.style.whiteSpace = 'nowrap';
+                                                                        m1.style.lineHeight = m1.scrollHeight + 'px';
+                                                                        m1.style.fontSize = '0.85rem';
+                                                                        var resetAt = m1.scrollWidth;
+                                                                        var x1 = wrapper.offsetWidth;
+                                                                        var speed = 1.5;
+                                                                        function animate() {
+                                                                            x1 -= speed;
+                                                                            if (x1 <= -resetAt) x1 = wrapper.offsetWidth;
+                                                                            m1.style.transform = 'translateX(' + x1 + 'px)';
+                                                                            requestAnimationFrame(animate);
+                                                                        }
+                                                                        animate();
+                                                                    }
+                                                                    window.addEventListener('DOMContentLoaded', function() {
+                                                                        setTimeout(function() {
+                                                                            if (!cssMarqueeWorks() || window.getComputedStyle(document.getElementById('marquee1')).animationName === 'none') {
+                                                                                startJsMarquee();
+                                                                            }
+                                                                        }, 100);
+                                                                    });
+                                                                })();
+                                                                </script>
+                                </div>
             </div>
         </div>
     </div>
@@ -203,8 +248,8 @@ const firebaseConfig = {
                 <!-- Galeri & Live Photo Section -->
                 <section id="galeriSection" class="relative py-16 md:py-24 overflow-hidden">
                     <div class="max-w-3xl mx-auto px-4">
-                        <h2 class="font-playfair text-2xl md:text-3xl text-center text-[#D4AF37] mb-8 font-bold">Galeri Kenangan Tamu</h2>
-                        <form id="uploadPhotoForm" class="mb-8 flex flex-col md:flex-row gap-4 items-center justify-center" enctype="multipart/form-data">
+                            <h2 class="font-playfair text-2xl md:text-3xl text-center text-[#D4AF37] mb-0 mt-72 md:mt-8 font-bold">Galeri Kenangan Tamu</h2>
+                        <form id="uploadPhotoForm" class="mb-16 flex flex-col md:flex-row gap-4 items-center justify-center" enctype="multipart/form-data">
                             <input type="file" id="photoInput" accept="image/*" class="block w-full md:w-auto text-white bg-white/10 rounded-lg border border-[#D4AF37]/30 px-4 py-2" required>
                             <input type="text" id="photoCaption" placeholder="Caption (opsional)" class="block w-full md:w-60 px-4 py-2 rounded-lg border border-[#D4AF37]/30 bg-white/10 text-white">
                             <button type="submit" class="gold-button px-6 py-2 rounded-lg text-white font-semibold flex items-center gap-2"><i class="fas fa-upload"></i>Upload Foto</button>
@@ -582,9 +627,47 @@ const firebaseConfig = {
 
     <div class="fixed bottom-6 right-6 z-50" id="musicButtonWrapper" style="display:none;">
         <button onclick="toggleMusic()" id="musicButton" class="w-12 h-12 md:w-14 md:h-14 gold-button rounded-full flex items-center justify-center shadow-xl hover:scale-110">
+            <span id="musicStatusText" class="sr-only">OFF</span>
             <i class="fas fa-music text-white text-lg md:text-xl" id="musicIcon"></i>
         </button>
     </div>
+
+    <script>
+    // Update ON/OFF text for accessibility and visual feedback
+    function updateMusicStatusText() {
+        var audio = document.getElementById('backgroundMusic');
+        var statusText = document.getElementById('musicStatusText');
+        var icon = document.getElementById('musicIcon');
+        if (!audio || !statusText || !icon) return;
+        if (audio.paused || audio.ended) {
+            statusText.textContent = 'OFF';
+            icon.className = 'fas fa-music text-white text-lg md:text-xl';
+        } else {
+            statusText.textContent = 'ON';
+            icon.className = 'fas fa-pause text-white text-lg md:text-xl';
+        }
+    }
+    // Override toggleMusic agar benar-benar pause/play
+    window.toggleMusic = function() {
+        var audio = document.getElementById('backgroundMusic');
+        if (!audio) return;
+        if (audio.paused || audio.ended) {
+            audio.play();
+        } else {
+            audio.pause();
+        }
+        setTimeout(updateMusicStatusText, 100); // update status setelah aksi
+    };
+    // Inisialisasi status saat halaman load
+    document.addEventListener('DOMContentLoaded', updateMusicStatusText);
+    window.addEventListener('load', updateMusicStatusText);
+    // Jika audio di-pause/play dari luar
+    var audioEl = document.getElementById('backgroundMusic');
+    if (audioEl) {
+        audioEl.addEventListener('play', updateMusicStatusText);
+        audioEl.addEventListener('pause', updateMusicStatusText);
+    }
+    </script>
     
     <div class="fixed bottom-6 left-6 z-50">
         <button onclick="showDonationModal()" class="w-12 h-12 md:w-14 md:h-14 gold-button rounded-full flex items-center justify-center shadow-xl hover:scale-110 animate-pulse-slow">
