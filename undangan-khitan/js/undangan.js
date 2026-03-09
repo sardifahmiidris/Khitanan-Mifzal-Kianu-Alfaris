@@ -1,110 +1,4 @@
 // ==================== GALERI TAMU UNDANGAN ====================
-window.submitGuestGallery = function(event) {
-    event.preventDefault();
-    const name = document.getElementById('guestGalleryName')?.value;
-    const fileInput = document.getElementById('guestGalleryPhoto');
-    const file = fileInput?.files[0];
-    if (!name || !file) {
-        showNotification('Nama dan foto wajib diisi', 'error');
-        return;
-    }
-    // Progress bar
-    let progressBar = document.getElementById('galleryUploadProgress');
-    if (!progressBar) {
-        progressBar = document.createElement('div');
-        progressBar.id = 'galleryUploadProgress';
-        progressBar.style.width = '0%';
-        progressBar.style.height = '6px';
-        progressBar.style.background = 'linear-gradient(90deg,#D4AF37,#FCF6BA)';
-        progressBar.style.marginTop = '8px';
-        progressBar.style.borderRadius = '4px';
-        document.getElementById('guestGalleryForm').appendChild(progressBar);
-    }
-    progressBar.style.display = 'block';
-    progressBar.style.width = '0%';
-
-    // Kompres gambar sebelum upload
-    const compressImage = (file, maxWidth = 600, maxHeight = 600, quality = 0.7) => {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = function() {
-                let width = img.width;
-                let height = img.height;
-                if (width > maxWidth) {
-                    height = Math.round(height * (maxWidth / width));
-                    width = maxWidth;
-                }
-                if (height > maxHeight) {
-                    width = Math.round(width * (maxHeight / height));
-                    height = maxHeight;
-                }
-                const canvas = document.createElement('canvas');
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-                canvas.toBlob(blob => {
-                    resolve(blob);
-                }, 'image/jpeg', quality);
-            };
-            img.onerror = reject;
-            const reader = new FileReader();
-            reader.onload = e => { img.src = e.target.result; };
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-        });
-    };
-
-    document.getElementById('loading').style.display = 'flex';
-    compressImage(file).then(compressedBlob => {
-        const storageRef = firebase.storage().ref('guest-gallery/' + Date.now() + '_' + file.name.replace(/\s+/g, '_'));
-        const uploadTask = storageRef.put(compressedBlob);
-        uploadTask.on('state_changed', function(snapshot) {
-            const percent = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-            progressBar.style.width = percent + '%';
-        }, function(error) {
-            showNotification('Gagal upload foto: ' + error.message, 'error');
-            progressBar.style.display = 'none';
-            document.getElementById('loading').style.display = 'none';
-        }, function() {
-            uploadTask.snapshot.ref.getDownloadURL().then(url => {
-                firebase.database().ref('guestGallery').push({
-                    name,
-                    photoUrl: url,
-                    timestamp: Date.now()
-                }).then(() => {
-                    showNotification('Foto berhasil diupload!', 'success');
-                    document.getElementById('guestGalleryForm').reset();
-                });
-            }).finally(() => {
-                progressBar.style.display = 'none';
-                document.getElementById('loading').style.display = 'none';
-            });
-        });
-    });
-}
-
-function listenGuestGalleryRealtime() {
-    const grid = document.getElementById('guestGalleryGrid');
-    if (!grid) return;
-    firebase.database().ref('guestGallery').orderByChild('timestamp').limitToLast(20)
-        .on('value', function(snapshot) {
-            grid.innerHTML = '';
-            const arr = [];
-            snapshot.forEach(child => arr.push(child.val()));
-            arr.reverse().forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'glass-card rounded-xl p-2 flex flex-col items-center';
-                div.innerHTML = `
-                    <div class="w-24 h-24 md:w-28 md:h-28 rounded-lg overflow-hidden bg-[#23242a] mb-2 flex items-center justify-center">
-                        <img src="${item.photoUrl}" alt="${item.name}" class="object-cover w-full h-full" loading="lazy" />
-                    </div>
-                    <div class="text-white text-xs md:text-sm font-semibold text-center truncate w-full">${item.name}</div>
-                `;
-                grid.appendChild(div);
-            });
-        });
-}
 // Zoom effect for Calon Pemimpin Sholeh button
 document.addEventListener('DOMContentLoaded', function() {
     var calonBtn = document.querySelector('.calon-zoom-btn');
@@ -163,19 +57,16 @@ window.onload = function() {
         }
     }
 
-    // Langsung tampilkan mainContent tanpa cover
-    setTimeout(() => {
-        document.getElementById('coverPage').classList.add('hidden');
-        document.getElementById('mainContent').classList.add('show');
-    }, 300);
+    // Tampilkan coverPage saat halaman dimuat
+    document.getElementById('coverPage').classList.remove('hidden');
+    document.getElementById('mainContent').classList.remove('show');
 
     // Initialize donation progress
     // updateDonationProgress(); // Disabled: function not defined
-    // Jalankan listener donasi, ucapan, dan galeri real-time (delay agar DOM siap di mobile)
+    // Jalankan listener donasi dan ucapan real-time (delay agar DOM siap di mobile)
     setTimeout(() => {
         listenDonationsRealtime();
         listenUcapanRealtime();
-        listenGuestGalleryRealtime();
     }, 300);
 
     // Preload dan autoplay audio

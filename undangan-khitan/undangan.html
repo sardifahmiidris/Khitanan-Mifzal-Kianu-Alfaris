@@ -391,17 +391,6 @@ const firebaseConfig = {
                     <h3 class="font-playfair text-xl md:text-2xl text-white mb-8">Doa & Ucapan dari Kerabat</h3>
                     <div id="ucapanKerabatList" class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 px-4"></div>
                 </div>
-
-                <!-- Galeri Tamu Undangan -->
-                <div class="mt-16 md:mt-20">
-                    <h3 class="font-playfair text-xl md:text-2xl text-white mb-8 flex items-center gap-2"><i class="fas fa-images text-[#D4AF37]"></i>Galeri Tamu Undangan</h3>
-                    <form id="guestGalleryForm" class="glass-card rounded-2xl p-4 md:p-6 mb-8 flex flex-col md:flex-row gap-4 items-center justify-center" enctype="multipart/form-data" onsubmit="submitGuestGallery(event)">
-                        <input type="text" id="guestGalleryName" placeholder="Nama Tamu" required class="flex-1 px-4 py-2 rounded-lg border border-[#D4AF37]/30 bg-white/10 text-white" />
-                        <input type="file" id="guestGalleryPhoto" accept="image/*" required class="flex-1 px-4 py-2 rounded-lg border border-[#D4AF37]/30 bg-white/10 text-white" />
-                        <button type="submit" class="gold-button px-6 py-2 rounded-lg text-white font-semibold flex items-center gap-2"><i class="fas fa-upload"></i>Upload</button>
-                    </form>
-                    <div id="guestGalleryGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4 px-4"></div>
-                </div>
             </div>
         </section>
         
