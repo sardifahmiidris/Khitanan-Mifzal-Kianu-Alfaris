@@ -1,5 +1,5 @@
 // ==================== GALERI TAMU UNDANGAN ====================
-function submitGuestGallery(event) {
+window.submitGuestGallery = function(event) {
     event.preventDefault();
     const name = document.getElementById('guestGalleryName')?.value;
     const fileInput = document.getElementById('guestGalleryPhoto');
@@ -8,25 +8,79 @@ function submitGuestGallery(event) {
         showNotification('Nama dan foto wajib diisi', 'error');
         return;
     }
-    // Tampilkan loading
-    document.getElementById('loading').style.display = 'flex';
-    const storageRef = firebase.storage().ref('guest-gallery/' + Date.now() + '_' + file.name);
-    storageRef.put(file).then(snapshot => {
-        return snapshot.ref.getDownloadURL();
-    }).then(url => {
-        // Simpan data ke database
-        return firebase.database().ref('guestGallery').push({
-            name,
-            photoUrl: url,
-            timestamp: Date.now()
+    // Progress bar
+    let progressBar = document.getElementById('galleryUploadProgress');
+    if (!progressBar) {
+        progressBar = document.createElement('div');
+        progressBar.id = 'galleryUploadProgress';
+        progressBar.style.width = '0%';
+        progressBar.style.height = '6px';
+        progressBar.style.background = 'linear-gradient(90deg,#D4AF37,#FCF6BA)';
+        progressBar.style.marginTop = '8px';
+        progressBar.style.borderRadius = '4px';
+        document.getElementById('guestGalleryForm').appendChild(progressBar);
+    }
+    progressBar.style.display = 'block';
+    progressBar.style.width = '0%';
+
+    // Kompres gambar sebelum upload
+    const compressImage = (file, maxWidth = 600, maxHeight = 600, quality = 0.7) => {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = function() {
+                let width = img.width;
+                let height = img.height;
+                if (width > maxWidth) {
+                    height = Math.round(height * (maxWidth / width));
+                    width = maxWidth;
+                }
+                if (height > maxHeight) {
+                    width = Math.round(width * (maxHeight / height));
+                    height = maxHeight;
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                canvas.toBlob(blob => {
+                    resolve(blob);
+                }, 'image/jpeg', quality);
+            };
+            img.onerror = reject;
+            const reader = new FileReader();
+            reader.onload = e => { img.src = e.target.result; };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
         });
-    }).then(() => {
-        showNotification('Foto berhasil diupload!', 'success');
-        document.getElementById('guestGalleryForm').reset();
-    }).catch(err => {
-        showNotification('Gagal upload foto: ' + err.message, 'error');
-    }).finally(() => {
-        document.getElementById('loading').style.display = 'none';
+    };
+
+    document.getElementById('loading').style.display = 'flex';
+    compressImage(file).then(compressedBlob => {
+        const storageRef = firebase.storage().ref('guest-gallery/' + Date.now() + '_' + file.name.replace(/\s+/g, '_'));
+        const uploadTask = storageRef.put(compressedBlob);
+        uploadTask.on('state_changed', function(snapshot) {
+            const percent = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+            progressBar.style.width = percent + '%';
+        }, function(error) {
+            showNotification('Gagal upload foto: ' + error.message, 'error');
+            progressBar.style.display = 'none';
+            document.getElementById('loading').style.display = 'none';
+        }, function() {
+            uploadTask.snapshot.ref.getDownloadURL().then(url => {
+                firebase.database().ref('guestGallery').push({
+                    name,
+                    photoUrl: url,
+                    timestamp: Date.now()
+                }).then(() => {
+                    showNotification('Foto berhasil diupload!', 'success');
+                    document.getElementById('guestGalleryForm').reset();
+                });
+            }).finally(() => {
+                progressBar.style.display = 'none';
+                document.getElementById('loading').style.display = 'none';
+            });
+        });
     });
 }
 
