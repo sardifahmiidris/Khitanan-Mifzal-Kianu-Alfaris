@@ -163,10 +163,11 @@ window.onload = function() {
         }
     }
 
-    // Check if URL has parameter to auto-open
-    if (urlParams.get('open') === 'true') {
-        setTimeout(openInvitation, 500);
-    }
+    // Langsung tampilkan mainContent tanpa cover
+    setTimeout(() => {
+        document.getElementById('coverPage').classList.add('hidden');
+        document.getElementById('mainContent').classList.add('show');
+    }, 300);
 
     // Initialize donation progress
     // updateDonationProgress(); // Disabled: function not defined
