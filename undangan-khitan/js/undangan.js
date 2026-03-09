@@ -307,6 +307,27 @@ function showEWallet(wallet) {
 }
 
 // ==================== DONATION FUNCTIONS ====================
+// Fungsi untuk menampilkan donasi ke daftar donasi terbaru
+function addDonationToList(name, amount, message) {
+    const list = document.getElementById('donationList');
+    if (!list) return;
+    const div = document.createElement('div');
+    div.className = 'donation-item glass-card rounded-xl p-3 md:p-4 flex items-start gap-3';
+    div.innerHTML = `
+        <div class="flex-shrink-0 flex flex-col items-center pt-1">
+            <span class="inline-block bg-[#D4AF37]/20 rounded-full p-2 mb-1"><i class="fas fa-gift text-[#D4AF37] text-lg"></i></span>
+            <span class="text-[10px] text-[#D4AF37] font-bold bg-[#D4AF37]/10 rounded px-1.5 py-0.5 mt-1">NEW</span>
+        </div>
+        <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+                <span class="text-white font-semibold text-sm md:text-base">${name}</span>
+                <span class="text-[#D4AF37] font-bold text-base md:text-lg">Rp ${amount.toLocaleString('id-ID')}</span>
+            </div>
+            ${message ? `<div class="italic text-gray-300 text-xs md:text-sm mt-1">"${message}"</div>` : ''}
+        </div>
+    `;
+    list.appendChild(div);
+}
 function quickDonate() {
     const amount = document.getElementById('quickDonationAmount')?.value;
     
