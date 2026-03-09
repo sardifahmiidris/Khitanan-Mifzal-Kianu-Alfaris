@@ -1,3 +1,56 @@
+// ==================== GALERI TAMU UNDANGAN ====================
+function submitGuestGallery(event) {
+    event.preventDefault();
+    const name = document.getElementById('guestGalleryName')?.value;
+    const fileInput = document.getElementById('guestGalleryPhoto');
+    const file = fileInput?.files[0];
+    if (!name || !file) {
+        showNotification('Nama dan foto wajib diisi', 'error');
+        return;
+    }
+    // Tampilkan loading
+    document.getElementById('loading').style.display = 'flex';
+    const storageRef = firebase.storage().ref('guest-gallery/' + Date.now() + '_' + file.name);
+    storageRef.put(file).then(snapshot => {
+        return snapshot.ref.getDownloadURL();
+    }).then(url => {
+        // Simpan data ke database
+        return firebase.database().ref('guestGallery').push({
+            name,
+            photoUrl: url,
+            timestamp: Date.now()
+        });
+    }).then(() => {
+        showNotification('Foto berhasil diupload!', 'success');
+        document.getElementById('guestGalleryForm').reset();
+    }).catch(err => {
+        showNotification('Gagal upload foto: ' + err.message, 'error');
+    }).finally(() => {
+        document.getElementById('loading').style.display = 'none';
+    });
+}
+
+function listenGuestGalleryRealtime() {
+    const grid = document.getElementById('guestGalleryGrid');
+    if (!grid) return;
+    firebase.database().ref('guestGallery').orderByChild('timestamp').limitToLast(20)
+        .on('value', function(snapshot) {
+            grid.innerHTML = '';
+            const arr = [];
+            snapshot.forEach(child => arr.push(child.val()));
+            arr.reverse().forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'glass-card rounded-xl p-2 flex flex-col items-center';
+                div.innerHTML = `
+                    <div class="w-24 h-24 md:w-28 md:h-28 rounded-lg overflow-hidden bg-[#23242a] mb-2 flex items-center justify-center">
+                        <img src="${item.photoUrl}" alt="${item.name}" class="object-cover w-full h-full" loading="lazy" />
+                    </div>
+                    <div class="text-white text-xs md:text-sm font-semibold text-center truncate w-full">${item.name}</div>
+                `;
+                grid.appendChild(div);
+            });
+        });
+}
 // Zoom effect for Calon Pemimpin Sholeh button
 document.addEventListener('DOMContentLoaded', function() {
     var calonBtn = document.querySelector('.calon-zoom-btn');
@@ -63,10 +116,12 @@ window.onload = function() {
 
     // Initialize donation progress
     // updateDonationProgress(); // Disabled: function not defined
-    // Jalankan listener donasi real-time
-    listenDonationsRealtime();
-    // Jalankan listener ucapan real-time
-    listenUcapanRealtime();
+    // Jalankan listener donasi, ucapan, dan galeri real-time (delay agar DOM siap di mobile)
+    setTimeout(() => {
+        listenDonationsRealtime();
+        listenUcapanRealtime();
+        listenGuestGalleryRealtime();
+    }, 300);
 
     // Preload dan autoplay audio
     if (audio) {
