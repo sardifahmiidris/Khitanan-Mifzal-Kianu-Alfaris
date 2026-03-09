@@ -394,6 +394,20 @@ function listenDonationsRealtime() {
             if (totalDonationElem) {
                 totalDonationElem.textContent = 'Rp ' + total.toLocaleString('id-ID');
             }
+            // Update terkumpul bawah agar sama
+            const terkumpulBawahElem = document.getElementById('terkumpulBawah');
+            if (terkumpulBawahElem) {
+                // Format singkat: 2,5jt, 90jt, dst
+                let short = '';
+                if (total >= 1000000) {
+                    short = (total/1000000).toFixed(1).replace('.', ',') + 'jt';
+                } else if (total >= 1000) {
+                    short = (total/1000).toFixed(1).replace('.', ',') + 'rb';
+                } else {
+                    short = total.toLocaleString('id-ID');
+                }
+                terkumpulBawahElem.textContent = 'Terkumpul: Rp ' + short;
+            }
         });
 }
 

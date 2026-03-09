@@ -492,7 +492,7 @@ const firebaseConfig = {
                             <div class="text-2xl md:text-3xl font-bold text-[#D4AF37] mb-2" id="totalDonation">Rp 2.500.000</div>
                             <!-- Progress bar dihapus sesuai permintaan -->
                             <div class="flex justify-between text-xs md:text-sm text-gray-400">
-                                <span>Terkumpul: Rp 2.5jt</span><span>Target: Rp 50jt</span>
+                                <span id="terkumpulBawah">Terkumpul: Rp 2.5jt</span><span>Target: Rp 50jt</span>
                             </div>
                         </div>
                         
@@ -586,10 +586,6 @@ const firebaseConfig = {
                 </div>
                 <button type="submit" class="w-full gold-button text-white font-bold py-2 md:py-3 px-4 rounded-lg">
                     <i class="fas fa-check-circle mr-2"></i>Konfirmasi Donasi
-                </button>
-                <button type="button" onclick="sendDonationWA()" class="w-full gold-button text-white font-bold py-2 md:py-3 px-4 rounded-lg mt-2 flex items-center justify-center">
-                    <i class="fas fa-hand-holding-heart mr-2"></i>
-                    <span>Kirim Konfirmasi ke WA</span>
                 </button>
             </form>
         </div>
