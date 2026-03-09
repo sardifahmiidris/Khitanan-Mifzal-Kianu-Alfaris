@@ -1,4 +1,4 @@
-// ==================== GALERI TAMU UNDANGAN ====================
+// ...existing code...
 // Zoom effect for Calon Pemimpin Sholeh button
 document.addEventListener('DOMContentLoaded', function() {
     var calonBtn = document.querySelector('.calon-zoom-btn');
@@ -360,18 +360,40 @@ function submitDonation(event) {
     document.getElementById('donationForm')?.reset();
 }
 
+// Fungsi untuk kirim konfirmasi donasi ke WhatsApp
+function sendDonationWA() {
+    const name = document.getElementById('donorName')?.value || '';
+    const amount = document.getElementById('donorAmount')?.value || '';
+    const message = document.getElementById('donorMessage')?.value || '';
+    const method = document.getElementById('paymentMethod')?.value || '';
+    const waNumber = '6281234567890'; // Ganti dengan nomor WA tujuan
+    const text = `Halo, saya ingin konfirmasi donasi:\nNama: ${name}\nNominal: Rp${amount}\nMetode: ${method}\nUcapan: ${message}`;
+    const url = `https://wa.me/${waNumber}?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+}
+
 // Ambil donasi real-time dari Firebase
 function listenDonationsRealtime() {
     const list = document.getElementById('donationList');
     if (!list) return;
+    let total = 0;
     firebase.database().ref('donations').orderByChild('timestamp').limitToLast(10)
         .on('value', function(snapshot) {
             list.innerHTML = '';
             const arr = [];
-            snapshot.forEach(child => arr.push(child.val()));
+            snapshot.forEach(child => {
+                const val = child.val();
+                arr.push(val);
+                total += parseInt(val.amount || 0);
+            });
             arr.reverse().forEach(donation => {
                 addDonationToList(donation.name, donation.amount, donation.message);
             });
+            // Update totalDonation di HTML
+            const totalDonationElem = document.getElementById('totalDonation');
+            if (totalDonationElem) {
+                totalDonationElem.textContent = 'Rp ' + total.toLocaleString('id-ID');
+            }
         });
 }
 
@@ -522,8 +544,4 @@ document.querySelectorAll('.modal-overlay').forEach(modal => {
     }, { passive: false });
 });
 
-// ==================== GALERI & LIVE PHOTO ====================
-if (typeof firebase !== 'undefined') {
-    // ...upload foto dihapus...
-    // ...tampilan galeri dihapus...
-}
+// ...existing code...

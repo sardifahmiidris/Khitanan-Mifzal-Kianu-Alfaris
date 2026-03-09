@@ -40,6 +40,12 @@ const firebaseConfig = {
     <!-- Cover Page / Pembuka Undangan -->
     <div id="coverPage" class="cover-page">
         <div class="cover-content">
+            <div class="fixed bottom-6 right-6 z-50" id="musicButtonWrapperCover">
+                <button onclick="toggleMusic()" class="w-12 h-12 md:w-14 md:h-14 gold-button rounded-full flex items-center justify-center shadow-xl hover:scale-110">
+                    <span id="musicStatusTextCover" class="sr-only">OFF</span>
+                    <i class="fas fa-music text-white text-lg md:text-xl" id="musicIconCover"></i>
+                </button>
+            </div>
             <div class="bg-ornament"></div>
             <div class="star-field" id="starField"></div>
             <div class="crescent-moon animate-float"></div>
@@ -581,6 +587,10 @@ const firebaseConfig = {
                 <button type="submit" class="w-full gold-button text-white font-bold py-2 md:py-3 px-4 rounded-lg">
                     <i class="fas fa-check-circle mr-2"></i>Konfirmasi Donasi
                 </button>
+                <button type="button" onclick="sendDonationWA()" class="w-full gold-button text-white font-bold py-2 md:py-3 px-4 rounded-lg mt-2 flex items-center justify-center">
+                    <i class="fas fa-hand-holding-heart mr-2"></i>
+                    <span>Kirim Konfirmasi ke WA</span>
+                </button>
             </form>
         </div>
     </div>
@@ -598,18 +608,19 @@ const firebaseConfig = {
     </div>
 
     <script>
-    // Update ON/OFF text for accessibility and visual feedback
+    // Update status musik untuk tombol di cover dan di undangan
     function updateMusicStatusText() {
         var audio = document.getElementById('backgroundMusic');
         var statusText = document.getElementById('musicStatusText');
         var icon = document.getElementById('musicIcon');
-        if (!audio || !statusText || !icon) return;
-        if (audio.paused || audio.ended) {
-            statusText.textContent = 'OFF';
-            icon.className = 'fas fa-music text-white text-lg md:text-xl';
-        } else {
-            statusText.textContent = 'ON';
-            icon.className = 'fas fa-pause text-white text-lg md:text-xl';
+        var statusTextCover = document.getElementById('musicStatusTextCover');
+        var iconCover = document.getElementById('musicIconCover');
+        if (audio) {
+            var isPlaying = !(audio.paused || audio.ended);
+            if (statusText) statusText.textContent = isPlaying ? 'ON' : 'OFF';
+            if (icon) icon.className = isPlaying ? 'fas fa-pause text-white text-lg md:text-xl' : 'fas fa-music text-white text-lg md:text-xl';
+            if (statusTextCover) statusTextCover.textContent = isPlaying ? 'ON' : 'OFF';
+            if (iconCover) iconCover.className = isPlaying ? 'fas fa-pause text-white text-lg md:text-xl' : 'fas fa-music text-white text-lg md:text-xl';
         }
     }
     // Override toggleMusic agar benar-benar pause/play
