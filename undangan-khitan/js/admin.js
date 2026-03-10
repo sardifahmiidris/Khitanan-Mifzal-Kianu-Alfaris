@@ -111,6 +111,27 @@ function loadDashboardStats() {
 
     // Statistik donasi & ucapan dari Firebase
     loadFirebaseStats();
+    loadUcapanDonasiTable();
+}
+
+// Tampilkan data ucapan & donasi dari tamu di dashboard
+function loadUcapanDonasiTable() {
+    if (typeof firebase === 'undefined') return;
+    const tbody = document.getElementById('ucapan-donasi-table');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center text-gray-500">Memuat data...</td></tr>';
+    firebase.database().ref('donations').orderByChild('timestamp').limitToLast(20).on('value', function(snapshot) {
+        let rows = '';
+        snapshot.forEach(child => {
+            const val = child.val();
+            rows = `<tr>
+                <td class='px-4 md:px-6 py-4 font-medium'>${val.name || '-'}</td>
+                <td class='px-4 md:px-6 py-4'>${val.message || '-'}</td>
+                <td class='px-4 md:px-6 py-4 text-green-600 font-bold'>${val.amount ? 'Rp ' + parseInt(val.amount).toLocaleString('id-ID') : '-'}</td>
+            </tr>` + rows;
+        });
+        tbody.innerHTML = rows || '<tr><td colspan="3" class="px-6 py-4 text-center text-gray-500">Belum ada data donasi/ucapan.</td></tr>';
+    });
 }
 
 // Ambil statistik donasi & ucapan dari Firebase
@@ -270,23 +291,34 @@ function saveTamu(e) {
 
     const guests = getGuests();
 
-    if (id) {
-        const index = guests.findIndex(g => g.id === id);
-        if (index !== -1) {
-            guests[index] = { ...guests[index], nama, wa, status };
+    if (typeof firebase !== 'undefined') {
+        if (id) {
+            // Update tamu di Firebase
+            firebase.database().ref('guests/' + id).update({ nama, wa, status });
             showNotification('Data tamu berhasil diupdate!', 'success');
+        } else {
+            // Tambah tamu baru ke Firebase
+            const newRef = firebase.database().ref('guests').push();
+            newRef.set({ nama, wa, status, createdAt: new Date().toISOString(), linkTerkirim: false });
+            showNotification('Data tamu berhasil ditambahkan!', 'success');
         }
     } else {
-        guests.push({
-            id: generateId(),
-            nama, wa, status,
-            createdAt: new Date().toISOString(),
-            linkTerkirim: false
-        });
-        showNotification('Data tamu berhasil ditambahkan!', 'success');
+        // Fallback localStorage
+        if (id) {
+            const index = guests.findIndex(g => g.id === id);
+            if (index !== -1) {
+                guests[index] = { ...guests[index], nama, wa, status };
+            }
+        } else {
+            guests.push({
+                id: generateId(),
+                nama, wa, status,
+                createdAt: new Date().toISOString(),
+                linkTerkirim: false
+            });
+        }
+        saveGuests(guests);
     }
-
-    saveGuests(guests);
     closeTamuModal();
     loadCrudTable();
     loadDashboardStats();
@@ -300,8 +332,12 @@ function editTamu(id) {
 
 function deleteTamu(id) {
     if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
-        let guests = getGuests().filter(g => g.id !== id);
-        saveGuests(guests);
+        if (typeof firebase !== 'undefined') {
+            firebase.database().ref('guests/' + id).remove();
+        } else {
+            let guests = getGuests().filter(g => g.id !== id);
+            saveGuests(guests);
+        }
         loadCrudTable();
         loadDashboardStats();
         loadRecentGuests();
@@ -487,9 +523,36 @@ function deleteHistory(id) {
 // ==================== INITIALIZATION ====================
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Admin panel loaded');
-    
     loadSampleData();
-    
+
+    // Real-time sync tamu dari Firebase jika ada (misal: node 'guests')
+    if (typeof firebase !== 'undefined') {
+        firebase.database().ref('guests').on('value', function(snapshot) {
+            const guests = [];
+            snapshot.forEach(child => {
+                const val = child.val();
+                guests.push({
+                    id: child.key,
+                    nama: val.nama,
+                    wa: val.wa,
+                    status: val.status,
+                    createdAt: val.createdAt || '',
+                    linkTerkirim: val.linkTerkirim || false
+                });
+            });
+            setStorage('guests', guests);
+            loadDashboardStats();
+            loadCrudTable();
+            loadRecentGuests();
+            loadGuestSelect();
+        });
+        // Real-time ucapan (jika ingin tabel ucapan khusus, bisa tambahkan di dashboard)
+        firebase.database().ref('ucapan').on('value', function(snapshot) {
+            // Bisa tambahkan update tabel ucapan jika ingin tampilkan detail ucapan
+            loadDashboardStats();
+        });
+    }
+
     const mobileMenuButton = document.getElementById('mobile-menu-button');
     const mobileMenu = document.getElementById('mobile-menu');
     if (mobileMenuButton) {
@@ -509,7 +572,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     document.getElementById('tamuForm').addEventListener('submit', saveTamu);
-    
+
     document.getElementById('generator-form').addEventListener('submit', function(e) {
         e.preventDefault();
         const guestId = document.getElementById('guest-select').value;

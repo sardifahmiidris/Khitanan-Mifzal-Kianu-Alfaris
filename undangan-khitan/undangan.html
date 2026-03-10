@@ -41,10 +41,7 @@ const firebaseConfig = {
     <div id="coverPage" class="cover-page">
         <div class="cover-content">
             <div class="fixed bottom-6 right-6 z-50" id="musicButtonWrapperCover">
-                <button onclick="toggleMusic()" class="w-12 h-12 md:w-14 md:h-14 gold-button rounded-full flex items-center justify-center shadow-xl hover:scale-110">
-                    <span id="musicStatusTextCover" class="sr-only">OFF</span>
-                    <i class="fas fa-music text-white text-lg md:text-xl" id="musicIconCover"></i>
-                </button>
+                <!-- Tombol musik di cover disembunyikan sesuai permintaan -->
             </div>
             <div class="bg-ornament"></div>
             <div class="star-field" id="starField"></div>
@@ -492,7 +489,7 @@ const firebaseConfig = {
                             <div class="text-2xl md:text-3xl font-bold text-[#D4AF37] mb-2" id="totalDonation">Rp 2.500.000</div>
                             <!-- Progress bar dihapus sesuai permintaan -->
                             <div class="flex justify-between text-xs md:text-sm text-gray-400">
-                                <span id="terkumpulBawah">Terkumpul: Rp 2.5jt</span><span>Target: Rp 50jt</span>
+                                <span id="terkumpulBawah">Terkumpul: Rp 2.5jt</span><span>Target: Rp 10jt</span>
                             </div>
                         </div>
                         
@@ -511,8 +508,8 @@ const firebaseConfig = {
                                            class="flex-1 px-2 md:px-3 py-2 bg-white/10 rounded-lg border border-[#D4AF37]/30 text-white">
                                 </div>
                                 <button onclick="quickDonate()" class="gold-button w-full mt-3 px-3 md:px-4 py-2 rounded-lg text-white text-xs md:text-sm font-semibold flex items-center justify-center">
-                                    <img src="assets/images/icons/dana.svg" alt="DANA" style="width:18px;height:18px;display:inline;margin-right:6px;vertical-align:middle;" />
-                                    Konfirmasi DANA
+                                    <i class="fas fa-money-bill-wave text-lg md:text-xl mr-2"></i>
+                                    Konfirmasi Donasi
                                 </button>
                                 </div>
                             </div>
@@ -642,12 +639,20 @@ const firebaseConfig = {
     </script>
     
     <div class="fixed bottom-6 left-6 z-50">
-        <button onclick="showDonationModal()" class="w-12 h-12 md:w-14 md:h-14 gold-button rounded-full flex items-center justify-center shadow-xl hover:scale-110 animate-pulse-slow">
+        <button onclick="scrollToAmplop()" class="w-12 h-12 md:w-14 md:h-14 gold-button rounded-full flex items-center justify-center shadow-xl hover:scale-110 animate-pulse-slow">
             <i class="fas fa-gift text-white text-lg md:text-xl"></i>
         </button>
         <span class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] rounded-full w-5 h-5 md:w-6 md:h-6 flex items-center justify-center animate-pulse">NEW</span>
     </div>
     
     <script src="js/undangan.js"></script>
+    <script>
+    function scrollToAmplop() {
+        var amplop = document.getElementById('envelopeSection');
+        if (amplop) {
+            amplop.scrollIntoView({behavior: 'smooth'});
+        }
+    }
+    </script>
 </body>
 </html>
