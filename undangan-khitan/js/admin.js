@@ -464,8 +464,20 @@ function shareViaWA() {
     const guest = getGuests().find(g => g.id === guestId);
     if (!guest?.wa) return showNotification('Nomor WhatsApp tidak tersedia!', 'error');
     
-    const message = `Assalamualaikum *${guest.nama}*, \n\nBerikut adalah link undangan digital Khitanan:\n\n${link}\n\nMohon konfirmasi kehadiran melalui link di atas.\n\nTerima kasih 🙏`;
-    window.open(`https://wa.me/${guest.wa.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+    // Format pesan WA agar pasti muncul di kolom ketik
+    const message = [
+        `Assalamualaikum ${guest.nama},`,
+        '',
+        'Kami mengundang Bapak/Ibu/Saudara/i untuk menghadiri acara Khitanan:',
+        '',
+        `Link undangan: ${link}`,
+        '',
+        'Mohon konfirmasi kehadiran melalui link di atas.',
+        '',
+        'Terima kasih.'
+    ].join('\n');
+    const waUrl = `https://wa.me/${guest.wa.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+    window.open(waUrl, '_blank');
     
     const history = getGeneratedHistory().find(h => h.link === link);
     if (history) { history.status = 'terkirim'; setStorage('generatedHistory', getGeneratedHistory()); loadHistory(); }
@@ -571,16 +583,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    document.getElementById('tamuForm').addEventListener('submit', saveTamu);
+    var tamuForm = document.getElementById('tamuForm');
+    if (tamuForm) {
+        tamuForm.addEventListener('submit', saveTamu);
+    }
 
-    document.getElementById('generator-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const guestId = document.getElementById('guest-select').value;
-        const template = document.getElementById('message-template').value;
-        if (!guestId) return showNotification('Pilih tamu terlebih dahulu!', 'error');
-        const guest = getGuests().find(g => g.id === guestId);
-        if (guest) generateInvitation(guest, template);
-    });
+    var generatorForm = document.getElementById('generator-form');
+    if (generatorForm) {
+        generatorForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const guestId = document.getElementById('guest-select').value;
+            const template = document.getElementById('message-template').value;
+            if (!guestId) return showNotification('Pilih tamu terlebih dahulu!', 'error');
+            const guest = getGuests().find(g => g.id === guestId);
+            if (guest) generateInvitation(guest, template);
+        });
+    }
 
     document.getElementById('search-input')?.addEventListener('input', debounce(loadCrudTable, 300));
     document.getElementById('filter-status')?.addEventListener('change', loadCrudTable);
