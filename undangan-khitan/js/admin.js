@@ -120,18 +120,49 @@ function loadUcapanDonasiTable() {
     const tbody = document.getElementById('ucapan-donasi-table');
     if (!tbody) return;
     tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center text-gray-500">Memuat data...</td></tr>';
-    firebase.database().ref('donations').orderByChild('timestamp').limitToLast(20).on('value', function(snapshot) {
-        let rows = '';
-        snapshot.forEach(child => {
-            const val = child.val();
-            rows = `<tr>
-                <td class='px-4 md:px-6 py-4 font-medium'>${val.name || '-'}</td>
-                <td class='px-4 md:px-6 py-4'>${val.message || '-'}</td>
-                <td class='px-4 md:px-6 py-4 text-green-600 font-bold'>${val.amount ? 'Rp ' + parseInt(val.amount).toLocaleString('id-ID') : '-'}</td>
-            </tr>` + rows;
+
+    // Ambil data donasi
+    firebase.database().ref('donations').orderByChild('timestamp').limitToLast(20).on('value', function(donasiSnap) {
+        // Ambil data ucapan
+        firebase.database().ref('ucapan').orderByChild('timestamp').limitToLast(20).once('value', function(ucapanSnap) {
+            let rows = [];
+            // Hanya tampilkan data dari form donasi (donations)
+            donasiSnap.forEach(child => {
+                const val = child.val();
+                rows.push({
+                    nama: val.name || '-',
+                    ucapan: val.message || '-',
+                    donasi: val.amount ? 'Rp ' + parseInt(val.amount).toLocaleString('id-ID') : '-',
+                    status: val.amount && val.message ? 'Donasi & Ucapan' : val.amount ? 'Donasi' : 'Ucapan',
+                    paymentMethod: val.paymentMethod || '-',
+                    key: child.key,
+                    tipe: 'donasi'
+                });
+            });
+            tbody.innerHTML = rows.length > 0 ? rows.map(val =>
+                `<tr>
+                    <td class='px-4 md:px-6 py-4 font-medium'>${val.nama}</td>
+                    <td class='px-4 md:px-6 py-4'>${val.ucapan}</td>
+                    <td class='px-4 md:px-6 py-4 text-green-600 font-bold'>${val.donasi}</td>
+                    <td class='px-4 md:px-6 py-4'>${val.status}</td>
+                    <td class='px-4 md:px-6 py-4'>${val.paymentMethod || '-'}</td>
+                    <td class='px-4 md:px-6 py-4'>
+                        <button onclick="deleteUcapanDonasi('${val.key}','${val.tipe}')" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`
+            ).join('') : '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">Belum ada data donasi/ucapan.</td></tr>';
+
         });
-        tbody.innerHTML = rows || '<tr><td colspan="3" class="px-6 py-4 text-center text-gray-500">Belum ada data donasi/ucapan.</td></tr>';
     });
+}
+
+// Fungsi hapus ucapan/donasi
+function deleteUcapanDonasi(key, tipe) {
+    if (confirm('Hapus data ini?')) {
+        if (typeof firebase !== 'undefined') {
+            firebase.database().ref(tipe === 'donasi' ? 'donations/' + key : 'ucapan/' + key).remove();
+        }
+    }
 }
 
 // Ambil statistik donasi & ucapan dari Firebase
@@ -189,11 +220,19 @@ function loadRecentGuests() {
     
     tbody.innerHTML = guests.map(guest => {
         const statusClass = guest.status === 'hadir' ? 'badge-hadir' : guest.status === 'tidak' ? 'badge-tidak' : 'badge-pending';
+        // Jumlah kehadiran (default 1 jika tidak ada field, bisa diubah sesuai kebutuhan)
+        const jumlahKehadiran = guest.jumlahKehadiran !== undefined ? guest.jumlahKehadiran : 1;
+        // Konfirmasi kehadiran
+        let konfirmasi = '-';
+        if (guest.status === 'hadir') konfirmasi = 'Hadir';
+        else if (guest.status === 'tidak') konfirmasi = 'Tidak Hadir';
+        else konfirmasi = 'Masih Ragu';
         return `
         <tr class="hover:bg-gray-50">
             <td class="px-6 py-4">${escapeHtml(guest.nama)}</td>
             <td class="px-6 py-4">${guest.wa || '-'}</td>
-            <td class="px-6 py-4"><span class="${statusClass}">${guest.status}</span></td>
+            <td class="px-6 py-4">${jumlahKehadiran}</td>
+            <td class="px-6 py-4"><span class="${statusClass}">${konfirmasi}</span></td>
             <td class="px-6 py-4">
                 <button onclick="editTamu('${guest.id}')" class="text-blue-600 hover:text-blue-800 mr-2"><i class="fas fa-edit"></i></button>
                 <button onclick="deleteTamu('${guest.id}')" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
@@ -212,6 +251,8 @@ function escapeHtml(text) {
 
 // Fungsi untuk tombol update realtime (refresh data dashboard)
 function refreshData() {
+    // Pastikan fungsi refreshData global agar bisa dipanggil dari onclick HTML
+    window.refreshData = refreshData;
     loadDashboardStats();
     loadRecentGuests();
     loadCrudTable();
@@ -221,11 +262,13 @@ function refreshData() {
 }
 function showSection(sectionId) {
     document.querySelectorAll('.section').forEach(section => {
-        section.classList.add('hidden');
+            section.style.display = 'none';
+            section.classList.remove('hidden');
     });
     const selectedSection = document.getElementById(sectionId);
     if (selectedSection) {
-        selectedSection.classList.remove('hidden');
+            selectedSection.style.display = 'block';
+            selectedSection.classList.remove('hidden');
         if (sectionId === 'dashboard') {
             loadDashboardStats();
             loadRecentGuests();
@@ -558,10 +601,10 @@ document.addEventListener('DOMContentLoaded', function() {
             loadRecentGuests();
             loadGuestSelect();
         });
-        // Real-time ucapan (jika ingin tabel ucapan khusus, bisa tambahkan di dashboard)
+        // Real-time ucapan (update tabel ucapan & donasi di dashboard)
         firebase.database().ref('ucapan').on('value', function(snapshot) {
-            // Bisa tambahkan update tabel ucapan jika ingin tampilkan detail ucapan
-            loadDashboardStats();
+            loadUcapanDonasiTable();
+            loadFirebaseStats();
         });
     }
 
@@ -573,13 +616,18 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Event nav-link desktop & mobile
     document.querySelectorAll('.nav-link').forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
             const sectionId = this.dataset.section;
-            showSection(sectionId);
-            updateActiveNav(sectionId);
-            if (mobileMenu) mobileMenu.classList.add('hidden');
+            if (sectionId) {
+                showSection(sectionId);
+                updateActiveNav(sectionId);
+            }
+            // Tutup mobile menu jika ada
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (mobileMenu && window.innerWidth < 640) mobileMenu.classList.add('hidden');
         });
     });
 

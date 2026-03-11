@@ -347,12 +347,14 @@ function submitDonation(event) {
     const name = document.getElementById('donorName')?.value;
     const amount = parseInt(document.getElementById('donorAmount')?.value);
     const message = document.getElementById('donorMessage')?.value;
+    const paymentMethod = document.getElementById('paymentMethod')?.value || '';
     if (!name || !amount) return;
     // Kirim donasi ke Firebase agar real-time
     firebase.database().ref('donations').push({
         name,
         amount,
         message,
+        paymentMethod,
         timestamp: Date.now()
     });
     hideDonationModal();

@@ -130,16 +130,8 @@
                     <i class="fas fa-mosque text-green-600 text-2xl mr-2"></i>
                     <span class="font-semibold text-xl text-gray-800">Admin Khitan</span>
                 </div>
-                
-                <!-- Mobile menu button - visible only on mobile -->
-                <div class="flex items-center sm:hidden">
-                    <button id="mobile-menu-button" class="text-gray-500 hover:text-gray-600 focus:outline-none fixed top-5 right-4 z-50 sm:static sm:top-auto sm:right-auto transition-transform duration-200">
-                        <i class="fas fa-bars text-2xl"></i>
-                    </button>
-                </div>
-
                 <!-- Desktop menu - visible on desktop, hidden on mobile -->
-                <div class="desktop-menu hidden sm:flex items-center space-x-4">
+                <div class="desktop-menu hidden sm:flex items-center space-x-4 ml-6">
                     <a href="javascript:void(0)" class="nav-link px-3 py-2 rounded-lg hover:bg-gray-100 transition flex items-center" data-section="dashboard">
                         <i class="fas fa-chart-pie mr-2"></i>Dashboard
                     </a>
@@ -153,48 +145,15 @@
                         <i class="fas fa-plus mr-2"></i>Tambah Tamu
                     </button>
                 </div>
-            </div>
-        </div>
+                
+                <!-- Mobile menu button - visible only on mobile -->
+                <div class="flex items-center sm:hidden">
+                    <button id="mobile-menu-button" class="text-gray-500 hover:text-gray-600 focus:outline-none fixed top-5 right-4 z-50 sm:static sm:top-auto sm:right-auto transition-transform duration-200">
+                        <i class="fas fa-bars text-2xl"></i>
+                    </button>
+                </div>
 
-        <!-- Mobile menu - hidden by default -->
-        <div id="mobile-menu" class="mobile-menu hidden sm:hidden bg-white border-t shadow-lg fixed top-0 left-0 w-full h-full z-40 animate-slideIn" style="transition:all .3s;">
-            <div class="px-4 pt-0 pb-2 space-y-2 mt-16">
-                <style>
-                    #mobile-menu .space-y-2 > *:first-child {
-                        margin-top: -8px !important;
-                        padding-top: 0 !important;
-                    }
-                    #mobile-menu .space-y-2 > *:first-child span {
-                        font-size: 1.5rem !important;
-                        font-weight: 700 !important;
-                        color: #222 !important;
-                        margin-left: 0 !important;
-                    }
-                    #mobile-menu .space-y-2 > *:first-child svg {
-                        display: none !important;
-                    }
-                </style>
-                <a href="javascript:void(0)" class="nav-link flex items-center py-3 px-4 rounded-lg hover:bg-gray-50 transition" data-section="dashboard" onclick="document.getElementById('mobile-menu').classList.add('hidden')">
-                    <i class="fas fa-chart-pie w-6 mr-3"></i>Dashboard
-                </a>
-                <a href="javascript:void(0)" class="nav-link flex items-center py-3 px-4 rounded-lg hover:bg-gray-50 transition" data-section="tamu" onclick="document.getElementById('mobile-menu').classList.add('hidden')">
-                    <i class="fas fa-users w-6 mr-3"></i>Data Tamu
-                </a>
-                <a href="javascript:void(0)" class="nav-link flex items-center py-3 px-4 rounded-lg hover:bg-gray-50 transition" data-section="generator" onclick="document.getElementById('mobile-menu').classList.add('hidden')">
-                    <i class="fas fa-link w-6 mr-3"></i>Generator
-                </a>
-                <button onclick="openTamuModal();document.getElementById('mobile-menu').classList.add('hidden')" class="w-full flex items-center bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition mt-2">
-                                        <i class="fas fa-plus w-6 mr-3"></i>Tambah Tamu
-                                </button>
-                                <style>
-                                    @media (max-width: 639px) {
-                                        #mobile-menu button.bg-green-600 {
-                                            margin-top: 1rem !important;
-                                            margin-bottom: 2.4rem !important;
-                                        }
-                                    }
-                                </style>
-                </button>
+                </div>
             </div>
         </div>
     </nav>
@@ -217,18 +176,16 @@
             main {
                 padding-top: 6.5rem !important;
             }
-        }
-        </style>
-        <style>
-        @media (max-width: 639px) {
-            main {
-                padding-top: 5.5rem !important;
+            #dashboard h2,
+            #tamu h2 {
+                margin-top: 1.5rem !important;
+                margin-bottom: 1.2rem !important;
             }
         }
         </style>
         <section id="dashboard" class="section mb-10">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-800 sm:mt-16" style="margin-top:4.5rem;">Dashboard</h2>
+                <h2 class="text-2xl font-bold text-gray-800 sm:mt-16">Dashboard</h2>
                 <div class="flex items-center mt-2 sm:mt-0">
                     <span class="text-sm text-gray-500 mr-2">
                         <i class="fas fa-sync-alt mr-1"></i>Update real-time
@@ -248,12 +205,16 @@
                     <h3 class="text-lg font-semibold text-gray-800">Ucapan & Donasi dari Tamu</h3>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="w-full">
+                    <div class="overflow-x-auto">
+                        <table class="w-full min-w-[600px]">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
                                 <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ucapan</th>
                                 <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nominal Donasi</th>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Metode Pembayaran</th>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="ucapan-donasi-table" class="divide-y divide-gray-200">
@@ -263,69 +224,14 @@
                 </div>
             </div>
 
-                <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-xs md:text-sm">Jumlah Ucapan</p>
-                            <p class="text-2xl md:text-3xl font-bold text-blue-600" id="total-ucapan">0</p>
-                        </div>
-                        <div class="bg-blue-100 p-2 md:p-3 rounded-full">
-                            <i class="fas fa-comments text-blue-600 text-xl md:text-2xl"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-xs md:text-sm">Hadir</p>
-                            <p class="text-2xl md:text-3xl font-bold text-green-600" id="total-hadir">0</p>
-                        </div>
-                        <div class="bg-green-100 p-2 md:p-3 rounded-full">
-                            <i class="fas fa-check-circle text-green-600 text-xl md:text-2xl"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-xs md:text-sm">Tidak Hadir</p>
-                            <p class="text-2xl md:text-3xl font-bold text-red-600" id="total-tidak-hadir">0</p>
-                        </div>
-                        <div class="bg-red-100 p-2 md:p-3 rounded-full">
-                            <i class="fas fa-times-circle text-red-600 text-xl md:text-2xl"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-xs md:text-sm">Undangan Terkirim</p>
-                            <p class="text-2xl md:text-3xl font-bold text-blue-600" id="total-terkirim">0</p>
-                        </div>
-                        <div class="bg-blue-100 p-2 md:p-3 rounded-full">
-                            <i class="fas fa-envelope text-blue-600 text-xl md:text-2xl"></i>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <!-- Recent Guests Table -->
-            <div class="bg-white rounded-xl shadow-md overflow-hidden">
-                <div class="px-4 md:px-6 py-4 border-b border-gray-200">
-
-                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody id="recent-guests-table" class="divide-y divide-gray-200">
-                            <!-- Data will be inserted via JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            <table class="w-full min-w-[600px]">
+                <tbody id="recent-guests-table" class="divide-y divide-gray-200">
+                    <!-- Data will be inserted via JS -->
+                </tbody>
+            </table>
         </section>
 
         <!-- Tamu Management Section -->
