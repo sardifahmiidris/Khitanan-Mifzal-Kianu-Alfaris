@@ -417,7 +417,7 @@ function listenDonationsRealtime() {
 function submitRSVP(event) {
     event.preventDefault();
     const name = document.getElementById('rsvpName')?.value;
-    const guests = document.getElementById('rsvpGuests')?.value;
+    const guests = parseInt(document.getElementById('rsvpGuests')?.value) || 0;
     const status = document.getElementById('rsvpStatus')?.value;
     const message = document.getElementById('rsvpMessage')?.value;
     if (!name || !guests || !status) {
@@ -431,6 +431,8 @@ function submitRSVP(event) {
     // Kirim ucapan ke Firebase agar real-time
     firebase.database().ref('ucapan').push({
         name,
+        attendanceCount: guests,
+        attendance: status,
         message,
         timestamp: Date.now()
     }, function(error) {

@@ -31,6 +31,7 @@ function showNotification(message, type = 'info') {
 }
 
 function copyToClipboard(text, message) {
+    alert('copyToClipboard called!');
     navigator.clipboard.writeText(text).then(() => {
         showNotification(message || 'Berhasil disalin!', 'success');
     }).catch(() => {
@@ -134,6 +135,8 @@ function loadUcapanDonasiTable() {
                     ucapan: val.message || '-',
                     donasi: val.amount ? 'Rp ' + parseInt(val.amount).toLocaleString('id-ID') : '-',
                     status: val.amount && val.message ? 'Donasi & Ucapan' : val.amount ? 'Donasi' : 'Ucapan',
+                    attendance: val.attendance || '-',
+                    attendanceCount: val.attendanceCount || '-',
                     paymentMethod: val.paymentMethod || '-',
                     key: child.key,
                     tipe: 'donasi'
@@ -146,11 +149,13 @@ function loadUcapanDonasiTable() {
                     <td class='px-4 md:px-6 py-4 text-green-600 font-bold'>${val.donasi}</td>
                     <td class='px-4 md:px-6 py-4'>${val.status}</td>
                     <td class='px-4 md:px-6 py-4'>${val.paymentMethod || '-'}</td>
+                    <td class='px-4 md:px-6 py-4'>${val.attendanceCount && !isNaN(val.attendanceCount) ? val.attendanceCount : '-'}</td>
+                    <td class='px-4 md:px-6 py-4'>${val.attendance || '-'}</td>
                     <td class='px-4 md:px-6 py-4'>
                         <button onclick="deleteUcapanDonasi('${val.key}','${val.tipe}')" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
                     </td>
                 </tr>`
-            ).join('') : '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">Belum ada data donasi/ucapan.</td></tr>';
+            ).join('') : '<tr><td colspan="8" class="px-6 py-4 text-center text-gray-500">Belum ada data donasi/ucapan.</td></tr>';
 
         });
     });
@@ -262,13 +267,11 @@ function refreshData() {
 }
 function showSection(sectionId) {
     document.querySelectorAll('.section').forEach(section => {
-            section.style.display = 'none';
-            section.classList.remove('hidden');
+        section.classList.add('hidden');
     });
     const selectedSection = document.getElementById(sectionId);
     if (selectedSection) {
-            selectedSection.style.display = 'block';
-            selectedSection.classList.remove('hidden');
+        selectedSection.classList.remove('hidden');
         if (sectionId === 'dashboard') {
             loadDashboardStats();
             loadRecentGuests();
@@ -397,7 +400,7 @@ function generateGuestLink(nama, id) {
 }
 
 function copyGuestLink(link) {
-    copyToClipboard(link, 'Link undangan berhasil disalin!');
+    copyToClipboard(link, 'Salin Link');
 }
 
 function sendWA(id) {
@@ -496,7 +499,7 @@ function generateInvitation(guest, template) {
 
 function copyGeneratedLink() {
     const link = document.getElementById('generated-link')?.value;
-    link ? copyToClipboard(link, 'Link undangan berhasil disalin!') : showNotification('Generate link terlebih dahulu!', 'error');
+    link ? copyToClipboard(link, 'Salin Link') : showNotification('Generate link terlebih dahulu!', 'error');
 }
 
 function shareViaWA() {
@@ -610,9 +613,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const mobileMenuButton = document.getElementById('mobile-menu-button');
     const mobileMenu = document.getElementById('mobile-menu');
-    if (mobileMenuButton) {
-        mobileMenuButton.addEventListener('click', function() {
+    if (mobileMenuButton && mobileMenu) {
+        mobileMenuButton.addEventListener('click', function(e) {
+            e.stopPropagation();
             mobileMenu.classList.toggle('hidden');
+        });
+        // Optional: close menu when clicking outside
+        document.addEventListener('click', function(e) {
+            if (window.innerWidth < 640 && mobileMenu && !mobileMenu.classList.contains('hidden')) {
+                if (!mobileMenu.contains(e.target) && !mobileMenuButton.contains(e.target)) {
+                    mobileMenu.classList.add('hidden');
+                }
+            }
         });
     }
 
@@ -658,35 +670,44 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Export data tamu, donasi, ucapan ke CSV
-function exportAllData() {
-    // Export tamu dari localStorage
-    const guests = getGuests();
-    let csvTamu = 'Nama,WA,Status,LinkTerkirim\n';
-    guests.forEach(g => {
-        csvTamu += `"${g.nama}","${g.wa}","${g.status}","${g.linkTerkirim ? 'Ya' : 'Tidak'}"\n`;
-    });
-    downloadCSV(csvTamu, 'data_tamu.csv');
-
-    // Export donasi dari Firebase
+async function exportAllData() {
+    // Gabungkan data tamu dan donasi ke satu file
+    let csvGabungan = 'Nama,WA,Status,LinkTerkirim,Ucapan,Nominal Donasi,Metode Pembayaran,Jumlah Hadir\n';
+    // Buat map donasi berdasarkan nama (atau WA jika ingin lebih presisi)
+    let donasiMap = {};
     if (typeof firebase !== 'undefined') {
-        firebase.database().ref('donations').once('value', function(snapshot) {
-            let csvDonasi = 'Nama,Nominal,Pesan,Timestamp\n';
-            snapshot.forEach(child => {
-                const d = child.val();
-                csvDonasi += `"${d.name}","${d.amount}","${d.message || ''}","${d.timestamp || ''}"\n`;
+        await new Promise(resolve => {
+            firebase.database().ref('donations').once('value', function(snapshot) {
+                snapshot.forEach(child => {
+                    const d = child.val();
+                    // Key bisa pakai nama saja, atau nama+wa jika ingin lebih presisi
+                    const key = (d.name || '').toLowerCase().trim();
+                    donasiMap[key] = d;
+                });
+                resolve();
             });
-            downloadCSV(csvDonasi, 'data_donasi.csv');
-        });
-        // Export ucapan dari Firebase
-        firebase.database().ref('ucapan').once('value', function(snapshot) {
-            let csvUcapan = 'Nama,Pesan,Timestamp\n';
-            snapshot.forEach(child => {
-                const u = child.val();
-                csvUcapan += `"${u.name}","${u.message || ''}","${u.timestamp || ''}"\n`;
-            });
-            downloadCSV(csvUcapan, 'data_ucapan.csv');
         });
     }
+    const guests = getGuests();
+    guests.forEach(g => {
+        const key = (g.nama || '').toLowerCase().trim();
+        const donasi = donasiMap[key] || {};
+        // Data donasi
+        let nominal = '-';
+        if (donasi.amount !== undefined && donasi.amount !== null && donasi.amount !== '') {
+            nominal = donasi.amount;
+        } else if (donasi.amount === 0) {
+            nominal = '0';
+        }
+        let ucapan = '-';
+        if (donasi.message !== undefined && donasi.message !== null) {
+            ucapan = donasi.message;
+        }
+        const metode = donasi.paymentMethod || '-';
+        const jumlah = donasi.attendanceCount !== undefined && donasi.attendanceCount !== null && donasi.attendanceCount !== '' ? donasi.attendanceCount : '-';
+        csvGabungan += `"${g.nama}","${g.wa}","${g.status}","${g.linkTerkirim ? 'Ya' : 'Tidak'}","${ucapan}","${nominal}","${metode}","${jumlah}"\n`;
+    });
+    downloadCSV(csvGabungan, 'data_tamu_donasi.csv');
 }
 
 function downloadCSV(csv, filename) {

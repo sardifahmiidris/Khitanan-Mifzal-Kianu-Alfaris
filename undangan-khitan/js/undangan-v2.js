@@ -305,6 +305,8 @@ function quickDonate() {
 	showDonationModal();
 }
 function submitDonation(event) {
+		const attendance = document.getElementById('donorAttendance')?.value || '';
+		const attendanceCount = parseInt(document.getElementById('donorAttendanceCount')?.value) || 0;
 	event.preventDefault();
 	const name = document.getElementById('donorName')?.value;
 	const amount = parseInt(document.getElementById('donorAmount')?.value);
@@ -317,6 +319,8 @@ function submitDonation(event) {
 		amount,
 		message,
 		paymentMethod,
+		attendance,
+		attendanceCount,
 		timestamp: Date.now()
 	});
 	hideDonationModal();
