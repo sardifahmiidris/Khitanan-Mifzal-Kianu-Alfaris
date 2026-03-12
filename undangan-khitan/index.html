@@ -51,6 +51,10 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <!-- SheetJS for Excel export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- FileSaver.js untuk menyimpan file -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
         /* Custom styles */
         .badge-hadir {
@@ -134,9 +138,46 @@
             opacity: 1;
             visibility: visible;
         }
+
+        /* Loading overlay untuk export */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="bg-gray-50">
+    <!-- Loading Overlay untuk Export -->
+    <div id="exportLoading" class="loading-overlay">
+        <div class="bg-white p-6 rounded-xl shadow-xl text-center">
+            <div class="loading-spinner mx-auto mb-4"></div>
+            <p class="text-gray-700 font-semibold">Menyiapkan data...</p>
+            <p class="text-sm text-gray-500 mt-2">Mohon tunggu sebentar</p>
+        </div>
+    </div>
+
     <!-- Navbar -->
     <nav class="bg-white shadow-lg fixed w-full z-10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -477,43 +518,39 @@
         let guests = [];
         let donations = [];
         let currentEditId = null;
+        let dataReady = false;
 
         // ==================== DATABASE FUNCTIONS ====================
         
         // Load data from Firebase
         function loadData() {
+            let tamuLoaded = false;
+            let donasiLoaded = false;
+            
+            function checkReady() {
+                if (tamuLoaded && donasiLoaded) {
+                    dataReady = true;
+                    console.log('Data siap:', guests.length, 'tamu,', donations.length, 'donasi');
+                }
+            }
+            
             // Load guests (tamu)
             db.ref('tamu').on('value', (snapshot) => {
                 const data = snapshot.val();
                 guests = data ? Object.entries(data).map(([id, value]) => ({ id, ...value })) : [];
-                console.log('Guests loaded:', guests);
-                
-                // Load donations after guests are loaded
-                loadDonations();
-                
-                // Update UI
+                tamuLoaded = true;
+                checkReady();
                 updateDashboardStats();
                 loadCrudTable();
                 loadGuestSelect();
             });
 
-            // Listen for donations separately
+            // Load donations
             db.ref('donations').on('value', (snapshot) => {
                 const data = snapshot.val();
                 donations = data ? Object.entries(data).map(([id, value]) => ({ id, ...value })) : [];
-                console.log('Donations loaded:', donations);
-                
-                // Update UI
-                updateDashboardStats();
-                loadUcapanDonasiTable();
-                loadDonasiTable();
-            });
-        }
-
-        function loadDonations() {
-            db.ref('donations').once('value', (snapshot) => {
-                const data = snapshot.val();
-                donations = data ? Object.entries(data).map(([id, value]) => ({ id, ...value })) : [];
+                donasiLoaded = true;
+                checkReady();
                 updateDashboardStats();
                 loadUcapanDonasiTable();
                 loadDonasiTable();
@@ -779,6 +816,164 @@
             alert(message); // Simple alert for now
         }
 
+        // ==================== EXPORT FUNCTION ====================
+
+        function exportAllData() {
+            // Tampilkan loading
+            document.getElementById('exportLoading').style.display = 'flex';
+            
+            // Cek data sudah siap
+            if (!dataReady) {
+                setTimeout(() => {
+                    document.getElementById('exportLoading').style.display = 'none';
+                    showNotification('Data belum siap, silakan tunggu beberapa detik lalu coba lagi.', 'error');
+                }, 500);
+                return;
+            }
+
+            try {
+                console.log('Memulai export dengan data:', guests.length, 'tamu,', donations.length, 'donasi');
+
+                // Prepare data for Excel - Data Tamu
+                const guestData = guests.map((guest, index) => {
+                    // Cari donasi terkait berdasarkan guestId atau nama
+                    const relatedDonations = donations.filter(d => 
+                        d.guestId === guest.id || 
+                        (d.name && guest.nama && d.name.toLowerCase() === guest.nama.toLowerCase())
+                    );
+                    
+                    const totalDonasi = relatedDonations.reduce((sum, d) => sum + (parseInt(d.amount) || 0), 0);
+                    const donasiTerakhir = relatedDonations.length > 0 ? relatedDonations[0] : null;
+                    
+                    return {
+                        'No': index + 1,
+                        'Nama': guest.nama || '-',
+                        'No. WhatsApp': guest.wa || '-',
+                        'Status Kehadiran': getStatusLabel(guest.status),
+                        'Jumlah Kehadiran': guest.jumlahKehadiran || 0,
+                        'Total Donasi': totalDonasi,
+                        'Donasi Terakhir': donasiTerakhir ? formatRupiah(donasiTerakhir.amount) : '-',
+                        'Ucapan': donasiTerakhir ? (donasiTerakhir.message || '-') : '-',
+                        'Metode Pembayaran': donasiTerakhir ? (donasiTerakhir.paymentMethod || '-') : '-',
+                        'Link Undangan': `${window.location.origin}/undangan.html?guest=${guest.id}`,
+                        'Tanggal Dibuat': formatDate(guest.createdAt),
+                        'Terakhir Update': formatDate(guest.updatedAt)
+                    };
+                });
+
+                // Prepare data for Excel - Data Donasi
+                const donationData = donations.map((donation, index) => {
+                    // Cari tamu terkait
+                    const relatedGuest = guests.find(g => 
+                        g.id === donation.guestId || 
+                        (g.nama && donation.name && g.nama.toLowerCase() === donation.name.toLowerCase())
+                    );
+                    
+                    return {
+                        'No': index + 1,
+                        'Nama Donatur': donation.name || '-',
+                        'Nominal Donasi': formatRupiah(donation.amount),
+                        'Ucapan/Doa': donation.message || '-',
+                        'Status Kehadiran': getStatusLabel(donation.attendance),
+                        'Jumlah Hadir': donation.attendanceCount || 0,
+                        'Metode Pembayaran': donation.paymentMethod || '-',
+                        'Terkait Tamu': relatedGuest ? relatedGuest.nama : '-',
+                        'Waktu Donasi': formatDate(donation.createdAt)
+                    };
+                });
+
+                // Create workbook dengan multiple sheets
+                const wb = XLSX.utils.book_new();
+
+                // Sheet 1: Data Tamu
+                const wsGuests = XLSX.utils.json_to_sheet(guestData);
+                XLSX.utils.book_append_sheet(wb, wsGuests, 'Data Tamu');
+
+                // Sheet 2: Data Donasi
+                const wsDonations = XLSX.utils.json_to_sheet(donationData);
+                XLSX.utils.book_append_sheet(wb, wsDonations, 'Data Donasi');
+
+                // Sheet 3: Ringkasan/Statistik
+                const summaryData = [
+                    ['Ringkasan Data Undangan Khitanan'],
+                    ['Tanggal Export', new Date().toLocaleString('id-ID')],
+                    [''],
+                    ['Statistik Tamu'],
+                    ['Total Tamu', guests.length],
+                    ['Konfirmasi Hadir', guests.filter(g => g.status === 'hadir').length],
+                    ['Tidak Hadir', guests.filter(g => g.status === 'tidak').length],
+                    ['Pending', guests.filter(g => g.status === 'pending').length],
+                    ['Ragu-ragu', guests.filter(g => g.status === 'ragu').length],
+                    ['Total Kehadiran', guests.reduce((sum, g) => sum + (parseInt(g.jumlahKehadiran) || 0), 0)],
+                    [''],
+                    ['Statistik Donasi'],
+                    ['Total Donasi', formatRupiah(donations.reduce((sum, d) => sum + (parseInt(d.amount) || 0), 0))],
+                    ['Jumlah Donatur', donations.length],
+                    ['Donasi Tertinggi', donations.length > 0 ? formatRupiah(Math.max(...donations.map(d => parseInt(d.amount) || 0))) : 'Rp 0'],
+                    ['Rata-rata Donasi', donations.length > 0 ? formatRupiah(donations.reduce((sum, d) => sum + (parseInt(d.amount) || 0), 0) / donations.length) : 'Rp 0']
+                ];
+
+                const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+                
+                // Atur lebar kolom untuk sheet summary
+                wsSummary['!cols'] = [{ wch: 25 }, { wch: 20 }];
+                
+                XLSX.utils.book_append_sheet(wb, wsSummary, 'Ringkasan');
+
+                // Atur lebar kolom untuk sheet data
+                wsGuests['!cols'] = [
+                    { wch: 5 },   // No
+                    { wch: 25 },  // Nama
+                    { wch: 18 },  // No. WhatsApp
+                    { wch: 15 },  // Status
+                    { wch: 12 },  // Jumlah Kehadiran
+                    { wch: 15 },  // Total Donasi
+                    { wch: 15 },  // Donasi Terakhir
+                    { wch: 30 },  // Ucapan
+                    { wch: 15 },  // Metode
+                    { wch: 40 },  // Link
+                    { wch: 20 },  // Tanggal Dibuat
+                    { wch: 20 }   // Terakhir Update
+                ];
+
+                wsDonations['!cols'] = [
+                    { wch: 5 },   // No
+                    { wch: 25 },  // Nama
+                    { wch: 15 },  // Nominal
+                    { wch: 40 },  // Ucapan
+                    { wch: 15 },  // Status
+                    { wch: 12 },  // Jumlah Hadir
+                    { wch: 15 },  // Metode
+                    { wch: 25 },  // Terkait Tamu
+                    { wch: 20 }   // Waktu
+                ];
+
+                // Generate filename with timestamp
+                const now = new Date();
+                const timestamp = now.toISOString().split('T')[0] + '_' + 
+                                 now.getHours().toString().padStart(2,'0') + 
+                                 now.getMinutes().toString().padStart(2,'0');
+                const filename = `data_khitanan_${timestamp}.xlsx`;
+
+                // Export file
+                XLSX.writeFile(wb, filename);
+                
+                console.log('Export berhasil:', filename);
+
+                // Sembunyikan loading
+                setTimeout(() => {
+                    document.getElementById('exportLoading').style.display = 'none';
+                }, 500);
+
+                showNotification(`Data berhasil diexport ke ${filename}`, 'success');
+
+            } catch (error) {
+                console.error('Error saat export:', error);
+                document.getElementById('exportLoading').style.display = 'none';
+                showNotification('Gagal export data: ' + error.message, 'error');
+            }
+        }
+
         // ==================== NAVIGATION & MODAL ====================
 
         function showSection(sectionId) {
@@ -852,22 +1047,8 @@
             }
         }
 
-        function exportAllData() {
-            const data = {
-                tamu: guests,
-                donasi: donations,
-                exportDate: new Date().toISOString()
-            };
-            
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `data-khitanan-${new Date().toISOString().split('T')[0]}.json`;
-            a.click();
-        }
-
         function refreshData() {
+            dataReady = false;
             loadData();
             showNotification('Data berhasil direfresh!', 'success');
         }
