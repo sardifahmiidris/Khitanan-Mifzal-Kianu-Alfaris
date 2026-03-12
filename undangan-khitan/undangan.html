@@ -29,6 +29,36 @@ const firebaseConfig = {
 };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+        
+        // ==================== GUEST NAME FROM URL ====================
+        // Fungsi untuk membaca parameter dari URL
+        function getGuestIdFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('guest');
+        }
+        
+        // Fungsi untuk menampilkan nama tamu di cover
+        function loadGuestNameOnCover() {
+            const guestId = getGuestIdFromURL();
+            if (guestId) {
+                db.ref('tamu/' + guestId).once('value', function(snapshot) {
+                    const guestData = snapshot.val();
+                    if (guestData && guestData.nama) {
+                        const guestNameCoverElement = document.getElementById('guestNameCover');
+                        guestNameCoverElement.textContent = 'Yth. ' + guestData.nama;
+                        guestNameCoverElement.style.display = 'block';
+                        console.log('Nama tamu:', guestData.nama);
+                    } else {
+                        console.log('Data tamu tidak ditemukan');
+                    }
+                });
+            }
+        }
+        
+        // Panggil fungsi saat page load
+        window.addEventListener('DOMContentLoaded', function() {
+            loadGuestNameOnCover();
+        });
         </script>
 </head>
 <body class="bg-[#0a0f1a] overflow-x-hidden">
