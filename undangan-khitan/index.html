@@ -166,6 +166,15 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Preview undangan */
+        .invitation-preview-card {
+            background: linear-gradient(135deg, #0a0f1a, #1a1c2c);
+            border: 1px solid #D4AF37;
+            border-radius: 12px;
+            padding: 1rem;
+            color: white;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -447,51 +456,102 @@
         <section id="generator" class="section hidden mb-10">
             <h2 class="text-2xl font-bold text-gray-800 mb-6">Generator Link Undangan</h2>
             
-            <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Buat Link Undangan</h3>
-                
-                <form id="generator-form" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Pilih Tamu</label>
-                        <select id="guest-select" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500 text-sm md:text-base">
-                            <option value="">Pilih tamu...</option>
-                            <!-- Options will be loaded via JS -->
-                        </select>
-                    </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Generator Form -->
+                <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Buat Link Undangan</h3>
                     
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Template Pesan</label>
-                        <select id="message-template" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500 text-sm md:text-base">
-                            <option value="formal">Formal</option>
-                            <option value="santai">Santai</option>
-                            <option value="islami">Islami</option>
-                        </select>
+                    <form id="generator-form" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Pilih Tamu</label>
+                            <select id="guest-select" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500 text-sm md:text-base">
+                                <option value="">Pilih tamu...</option>
+                                <!-- Options will be loaded via JS -->
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Template Pesan</label>
+                            <select id="message-template" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500 text-sm md:text-base">
+                                <option value="formal">Formal</option>
+                                <option value="santai">Santai</option>
+                                <option value="islami">Islami</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition text-sm md:text-base">
+                            <i class="fas fa-link mr-2"></i>Generate Link
+                        </button>
+                    </form>
+
+                    <!-- Informasi Path -->
+                    <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-800">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        <strong>Info:</strong> Link akan mengarah ke file <code class="bg-yellow-100 px-1 rounded">undangan.html</code> di folder yang sama.
                     </div>
+                </div>
 
-                    <button type="submit" class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition text-sm md:text-base">
-                        <i class="fas fa-link mr-2"></i>Generate Link
-                    </button>
-                </form>
-            </div>
+                <!-- Result and Preview -->
+                <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Hasil Generate</h3>
+                    
+                    <div id="generator-result" class="space-y-4">
+                        <div class="bg-gray-50 p-3 md:p-4 rounded-lg">
+                            <p class="text-sm text-gray-600 mb-2">Link Undangan:</p>
+                            
+                            <!-- Link Display -->
+                            <div class="flex flex-col sm:flex-row gap-2 mb-3">
+                                <input id="generated-link" type="text" readonly 
+                                    class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-500" 
+                                    placeholder="Belum digenerate">
+                                <button onclick="copyGeneratedLink()" 
+                                    class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 text-sm flex items-center justify-center gap-2">
+                                    <i class="fas fa-copy"></i>Copy
+                                </button>
+                            </div>
 
-            <div class="bg-white rounded-xl shadow-md p-4 md:p-6 mt-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Hasil Generate</h3>
-                
-                <div id="generator-result" class="space-y-4">
-                    <div class="bg-gray-50 p-3 md:p-4 rounded-lg">
-                        <p class="text-sm text-gray-600 mb-2">Link Undangan:</p>
-                        <div class="flex flex-col md:flex-row gap-2 items-center">
-                            <div class="flex w-full flex-col sm:flex-row gap-2 items-stretch">
-                                <div style="position:relative;flex:1;min-width:0;">
-                                    <input id="generated-link" type="text" readonly class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Belum digenerate" />
-                                    <button type="button" onclick="copyGeneratedLink()" title="Salin Link" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;"></button>
-                                </div>
-                                <button type="button" onclick="copyGeneratedLink()" class="bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 text-xs flex items-center justify-center min-w-[80px]"><i class="fas fa-copy mr-1"></i>Copy</button>
-                                <button type="button" onclick="shareViaWA()" class="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 text-xs flex items-center justify-center min-w-[90px]"><i class="fab fa-whatsapp mr-1"></i>Share WA</button>
+                            <!-- Action Buttons -->
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                <button onclick="testGeneratedLink()" 
+                                    class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 text-sm flex items-center gap-2">
+                                    <i class="fas fa-external-link-alt"></i>Test Link
+                                </button>
+                                <button onclick="shareViaWA()" 
+                                    class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm flex items-center gap-2">
+                                    <i class="fab fa-whatsapp"></i>Share WA
+                                </button>
+                                <button onclick="shareViaTelegram()" 
+                                    class="bg-blue-400 text-white px-4 py-2 rounded-lg hover:bg-blue-500 text-sm flex items-center gap-2">
+                                    <i class="fab fa-telegram"></i>Share Telegram
+                                </button>
+                            </div>
+
+                            <!-- Preview Undangan -->
+                            <div id="invitation-preview" class="mt-4 p-4 invitation-preview-card hidden">
+                                <!-- Preview akan diisi oleh JavaScript -->
                             </div>
                         </div>
-                        <div id="invitation-preview" class="mt-3"></div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Daftar Tamu untuk Generate Cepat -->
+            <div class="mt-6 bg-white rounded-xl shadow-md p-4 md:p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Generate Cepat per Tamu</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">No</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">WhatsApp</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="quick-generate-table" class="divide-y divide-gray-200">
+                            <!-- Data akan diisi via JS -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </section>
@@ -520,6 +580,9 @@
         let currentEditId = null;
         let dataReady = false;
 
+        // Base URL untuk undangan
+        const INVITATION_URL = window.location.origin + '/undangan.html';
+
         // ==================== DATABASE FUNCTIONS ====================
         
         // Load data from Firebase
@@ -543,6 +606,7 @@
                 updateDashboardStats();
                 loadCrudTable();
                 loadGuestSelect();
+                loadQuickGenerateTable();
             });
 
             // Load donations
@@ -777,6 +841,165 @@
             select.innerHTML = options;
         }
 
+        function loadQuickGenerateTable() {
+            const tbody = document.getElementById('quick-generate-table');
+            if (!tbody) return;
+            
+            if (guests.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-gray-500">Tidak ada data tamu</td></tr>';
+                return;
+            }
+            
+            let html = '';
+            guests.slice(0, 5).forEach((guest, index) => {
+                html += `
+                    <tr>
+                        <td class="px-4 py-2 text-sm">${index + 1}</td>
+                        <td class="px-4 py-2 text-sm">${escapeHtml(guest.nama || '-')}</td>
+                        <td class="px-4 py-2 text-sm">${escapeHtml(guest.wa || '-')}</td>
+                        <td class="px-4 py-2 text-sm">
+                            <button onclick="generateAndShowLink('${guest.id}')" class="text-green-600 hover:text-green-800 text-sm flex items-center gap-1">
+                                <i class="fas fa-link"></i> Generate
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+
+        // ==================== GENERATOR FUNCTIONS ====================
+
+        function generateInvitationLink(guestId) {
+            if (!guestId) return null;
+            return `${INVITATION_URL}?guest=${guestId}`;
+        }
+
+        function generateGuestLink(guestId) {
+            const guest = guests.find(g => g.id === guestId);
+            if (guest) {
+                const link = generateInvitationLink(guestId);
+                document.getElementById('generated-link').value = link;
+                showInvitationPreview(guest);
+                showSection('generator');
+            }
+        }
+
+        function generateAndShowLink(guestId) {
+            generateGuestLink(guestId);
+            showNotification('Link berhasil digenerate!', 'success');
+        }
+
+        function copyGuestLink(guestId) {
+            const guest = guests.find(g => g.id === guestId);
+            if (guest) {
+                const link = generateInvitationLink(guestId);
+                copyToClipboard(link, 'Link berhasil disalin!');
+            }
+        }
+
+        function copyGeneratedLink() {
+            const linkInput = document.getElementById('generated-link');
+            if (linkInput.value) {
+                copyToClipboard(linkInput.value, 'Link berhasil disalin!');
+            } else {
+                showNotification('Tidak ada link untuk disalin', 'error');
+            }
+        }
+
+        function copyToClipboard(text, successMessage) {
+            navigator.clipboard.writeText(text).then(() => {
+                showNotification(successMessage, 'success');
+            }).catch(() => {
+                // Fallback untuk browser yang tidak support clipboard API
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showNotification(successMessage, 'success');
+            });
+        }
+
+        function testGeneratedLink() {
+            const link = document.getElementById('generated-link').value;
+            if (link) {
+                window.open(link, '_blank');
+            } else {
+                showNotification('Generate link terlebih dahulu!', 'error');
+            }
+        }
+
+        function shareViaWA() {
+            const link = document.getElementById('generated-link').value;
+            if (link) {
+                const guestId = getGuestIdFromLink(link);
+                const guest = guests.find(g => g.id === guestId);
+                const guestName = guest ? guest.nama : 'Bapak/Ibu';
+                
+                const template = document.getElementById('message-template').value;
+                const message = generateWAMessage(guestName, link, template);
+                
+                const waLink = `https://wa.me/?text=${encodeURIComponent(message)}`;
+                window.open(waLink, '_blank');
+            } else {
+                showNotification('Generate link terlebih dahulu!', 'error');
+            }
+        }
+
+        function shareViaTelegram() {
+            const link = document.getElementById('generated-link').value;
+            if (link) {
+                const guestId = getGuestIdFromLink(link);
+                const guest = guests.find(g => g.id === guestId);
+                const guestName = guest ? guest.nama : 'Bapak/Ibu';
+                
+                const template = document.getElementById('message-template').value;
+                const message = generateWAMessage(guestName, link, template);
+                
+                const telegramLink = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(message)}`;
+                window.open(telegramLink, '_blank');
+            } else {
+                showNotification('Generate link terlebih dahulu!', 'error');
+            }
+        }
+
+        function getGuestIdFromLink(link) {
+            const match = link.match(/[?&]guest=([^&]+)/);
+            return match ? match[1] : null;
+        }
+
+        function generateWAMessage(guestName, link, template) {
+            const templates = {
+                formal: `Assalamu'alaikum Wr. Wb.\n\nYth. ${guestName}\n\nDengan hormat, kami mengundang Bapak/Ibu/Saudara/i untuk menghadiri acara khitanan putra kami:\n\n*Mifzal Kianu Alfaris*\n\nYang insya Allah akan dilaksanakan pada:\n📅 Rabu, 25-26 Maret 2026\n⏰ 08.00 WIB - Selesai\n📍 Home, Jl. Raya Tegal Panjang 22/05\n\nMohon konfirmasi kehadiran melalui link undangan berikut:\n${link}\n\nAtas kehadiran dan doa restunya, kami ucapkan terima kasih.\n\nWassalamu'alaikum Wr. Wb.\n\n*Kel. Bpk Ristanto & Ibu Nurfadilah*`,
+                
+                santai: `Halo ${guestName}!\n\nKami mengundang kamu untuk hadir di acara khitanan putra kami:\n\n*Mifzal Kianu Alfaris*\n\n🗓 Rabu, 25-26 Maret 2026\n⏰ 08.00 WIB\n📍 Home, Jl. Raya Tegal Panjang 22/05\n\nYuk konfirmasi kehadiran lewat link ini:\n${link}\n\nMakasih banyak! 🙏\n\nSalam,\nKeluarga Ristanto & Nurfadilah`,
+                
+                islami: `بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\n\nAssalamu'alaikum Warahmatullahi Wabarakatuh\n\nKepada Yth. ${guestName}\n\nDengan memohon ridho Allah SWT, kami bermaksud mengundang Bapak/Ibu/Saudara/i untuk menghadiri acara khitanan putra kami:\n\n*Mifzal Kianu Alfaris*\n\nInsya Allah akan dilaksanakan pada:\n📅 Rabu, 25-26 Maret 2026\n⏰ 08.00 WIB\n📍 Home, Jl. Raya Tegal Panjang 22/05\n\nMohon konfirmasi kehadiran melalui tautan berikut:\n${link}\n\nJazakumullahu khairan katsiran atas doa dan kehadirannya.\n\nWassalamu'alaikum Warahmatullahi Wabarakatuh\n\n*Keluarga Besar Bpk Ristanto & Ibu Nurfadilah*`
+            };
+            
+            return templates[template] || templates.formal;
+        }
+
+        function showInvitationPreview(guest) {
+            const previewDiv = document.getElementById('invitation-preview');
+            previewDiv.classList.remove('hidden');
+            
+            previewDiv.innerHTML = `
+                <p class="text-[#D4AF37] text-xs mb-2">Preview Undangan:</p>
+                <p class="text-white text-sm mb-2">Assalamu'alaikum, <span class="text-[#D4AF37]">${escapeHtml(guest.nama)}</span></p>
+                <p class="text-gray-300 text-xs mb-3">Anda diundang ke acara khitanan:</p>
+                <p class="text-white text-sm font-bold mb-2">Mifzal Kianu Alfaris</p>
+                <p class="text-gray-300 text-xs mb-1">📅 Rabu, 25-26 Maret 2026 | 08.00 WIB</p>
+                <p class="text-gray-300 text-xs">📍 Home, Jl. Raya Tegal Panjang 22/05</p>
+                <div class="mt-3 pt-2 border-t border-[#D4AF37]/30">
+                    <p class="text-[#D4AF37] text-xs">Link undangan sudah siap, silakan copy dan bagikan.</p>
+                </div>
+            `;
+        }
+
         // ==================== UTILITY FUNCTIONS ====================
 
         function formatRupiah(amount) {
@@ -855,7 +1078,7 @@
                         'Donasi Terakhir': donasiTerakhir ? formatRupiah(donasiTerakhir.amount) : '-',
                         'Ucapan': donasiTerakhir ? (donasiTerakhir.message || '-') : '-',
                         'Metode Pembayaran': donasiTerakhir ? (donasiTerakhir.paymentMethod || '-') : '-',
-                        'Link Undangan': `${window.location.origin}/undangan.html?guest=${guest.id}`,
+                        'Link Undangan': generateInvitationLink(guest.id),
                         'Tanggal Dibuat': formatDate(guest.createdAt),
                         'Terakhir Update': formatDate(guest.updatedAt)
                     };
@@ -920,34 +1143,6 @@
                 
                 XLSX.utils.book_append_sheet(wb, wsSummary, 'Ringkasan');
 
-                // Atur lebar kolom untuk sheet data
-                wsGuests['!cols'] = [
-                    { wch: 5 },   // No
-                    { wch: 25 },  // Nama
-                    { wch: 18 },  // No. WhatsApp
-                    { wch: 15 },  // Status
-                    { wch: 12 },  // Jumlah Kehadiran
-                    { wch: 15 },  // Total Donasi
-                    { wch: 15 },  // Donasi Terakhir
-                    { wch: 30 },  // Ucapan
-                    { wch: 15 },  // Metode
-                    { wch: 40 },  // Link
-                    { wch: 20 },  // Tanggal Dibuat
-                    { wch: 20 }   // Terakhir Update
-                ];
-
-                wsDonations['!cols'] = [
-                    { wch: 5 },   // No
-                    { wch: 25 },  // Nama
-                    { wch: 15 },  // Nominal
-                    { wch: 40 },  // Ucapan
-                    { wch: 15 },  // Status
-                    { wch: 12 },  // Jumlah Hadir
-                    { wch: 15 },  // Metode
-                    { wch: 25 },  // Terkait Tamu
-                    { wch: 20 }   // Waktu
-                ];
-
                 // Generate filename with timestamp
                 const now = new Date();
                 const timestamp = now.toISOString().split('T')[0] + '_' + 
@@ -1009,42 +1204,6 @@
         function closeTamuModal() {
             document.getElementById('tamuModal').classList.add('hidden');
             document.getElementById('tamuModal').classList.remove('flex');
-        }
-
-        function generateGuestLink(guestId) {
-            const guest = guests.find(g => g.id === guestId);
-            if (guest) {
-                const link = `${window.location.origin}/undangan.html?guest=${guestId}`;
-                document.getElementById('generated-link').value = link;
-                showSection('generator');
-            }
-        }
-
-        function copyGuestLink(guestId) {
-            const guest = guests.find(g => g.id === guestId);
-            if (guest) {
-                const link = `${window.location.origin}/undangan.html?guest=${guestId}`;
-                navigator.clipboard.writeText(link).then(() => {
-                    showNotification('Link berhasil disalin!', 'success');
-                });
-            }
-        }
-
-        function copyGeneratedLink() {
-            const linkInput = document.getElementById('generated-link');
-            if (linkInput.value) {
-                navigator.clipboard.writeText(linkInput.value).then(() => {
-                    showNotification('Link berhasil disalin!', 'success');
-                });
-            }
-        }
-
-        function shareViaWA() {
-            const link = document.getElementById('generated-link').value;
-            if (link) {
-                const text = encodeURIComponent(`Assalamu'alaikum, berikut link undangan khitanan:\n\n${link}`);
-                window.open(`https://wa.me/?text=${text}`, '_blank');
-            }
         }
 
         function refreshData() {
