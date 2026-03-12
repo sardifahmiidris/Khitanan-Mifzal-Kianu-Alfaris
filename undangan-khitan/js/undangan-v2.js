@@ -1,5 +1,3 @@
-alert('Script undangan-v2.js berhasil dimuat!');
-// ...existing code...
 // Zoom effect for Calon Pemimpin Sholeh button
 document.addEventListener('DOMContentLoaded', function() {
 	var calonBtn = document.querySelector('.calon-zoom-btn');
@@ -510,4 +508,3 @@ document.querySelectorAll('.modal-overlay').forEach(modal => {
 		e.preventDefault();
 	}, { passive: false });
 });
-// ...existing code...

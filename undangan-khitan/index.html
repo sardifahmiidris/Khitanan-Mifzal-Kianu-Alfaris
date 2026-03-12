@@ -25,6 +25,7 @@
                     <option value="pending">Pending</option>
                     <option value="hadir">Hadir</option>
                     <option value="tidak">Tidak Hadir</option>
+                    <option value="ragu">Ragu-ragu</option>
                 </select>
             </div>
             <div class="flex flex-col sm:flex-row gap-2 justify-end">
@@ -47,6 +48,9 @@
     <title>Admin Dashboard - Undangan Khitan</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
     <style>
         /* Custom styles */
         .badge-hadir {
@@ -76,6 +80,16 @@
             font-weight: 600;
             display: inline-block;
         }
+        .badge-ragu {
+            background-color: #e0f2fe;
+            color: #0369a1;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+        
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
@@ -104,7 +118,6 @@
             .desktop-menu {
                 display: none !important;
             }
-            /* Mobile menu diatur oleh JS, default hidden */
         }
 
         /* Animasi untuk mobile menu */
@@ -117,18 +130,9 @@
         }
 
         .mobile-menu.open {
-            max-height: 500px; /* Sesuaikan dengan tinggi menu */
+            max-height: 500px;
             opacity: 1;
             visibility: visible;
-        }
-    </style>
-    <style>
-        @media (max-width: 639px) {
-            #dashboard h2,
-            #tamu h2 {
-                margin-top: 3.3rem !important;
-                margin-bottom: 0 !important;
-            }
         }
     </style>
 </head>
@@ -142,13 +146,16 @@
                     <span class="font-semibold text-xl text-gray-800">Admin Khitan</span>
                 </div>
                 
-                <!-- Desktop menu - hanya tampil di layar lebar (sm ke atas) -->
+                <!-- Desktop menu -->
                 <div class="desktop-menu hidden sm:flex items-center space-x-4">
                     <a href="javascript:void(0)" class="nav-link px-3 py-2 rounded-lg hover:bg-gray-100 transition flex items-center text-sm" data-section="dashboard">
                         <i class="fas fa-chart-pie mr-2"></i>Dashboard
                     </a>
                     <a href="javascript:void(0)" class="nav-link px-3 py-2 rounded-lg hover:bg-gray-100 transition flex items-center text-sm" data-section="tamu">
                         <i class="fas fa-users mr-2"></i>Data Tamu
+                    </a>
+                    <a href="javascript:void(0)" class="nav-link px-3 py-2 rounded-lg hover:bg-gray-100 transition flex items-center text-sm" data-section="donasi">
+                        <i class="fas fa-hand-holding-heart mr-2"></i>Donasi
                     </a>
                     <a href="javascript:void(0)" class="nav-link px-3 py-2 rounded-lg hover:bg-gray-100 transition flex items-center text-sm" data-section="generator">
                         <i class="fas fa-link mr-2"></i>Generator
@@ -161,7 +168,7 @@
                     </button>
                 </div>
 
-                <!-- Mobile menu button dan burger icon -->
+                <!-- Mobile menu button -->
                 <div class="flex items-center sm:hidden">
                     <button id="mobile-menu-button" class="text-gray-500 hover:text-gray-600 focus:outline-none z-50 p-2" aria-label="Menu">
                         <i class="fas fa-bars text-2xl"></i>
@@ -170,7 +177,7 @@
             </div>
         </div>
 
-        <!-- Mobile menu dropdown - SEMUA MENU ADA DI DALAM BURGER -->
+        <!-- Mobile menu dropdown -->
         <div id="mobile-menu" class="mobile-menu fixed top-14 left-0 w-full bg-white shadow-lg z-40 sm:hidden">
             <div class="flex flex-col py-2 px-4 space-y-2 border-t border-gray-200">
                 <a href="javascript:void(0)" class="nav-link px-3 py-3 rounded-lg hover:bg-gray-100 transition flex items-center" data-section="dashboard">
@@ -178,6 +185,9 @@
                 </a>
                 <a href="javascript:void(0)" class="nav-link px-3 py-3 rounded-lg hover:bg-gray-100 transition flex items-center" data-section="tamu">
                     <i class="fas fa-users mr-3 w-5"></i>Data Tamu
+                </a>
+                <a href="javascript:void(0)" class="nav-link px-3 py-3 rounded-lg hover:bg-gray-100 transition flex items-center" data-section="donasi">
+                    <i class="fas fa-hand-holding-heart mr-3 w-5"></i>Donasi
                 </a>
                 <a href="javascript:void(0)" class="nav-link px-3 py-3 rounded-lg hover:bg-gray-100 transition flex items-center" data-section="generator">
                     <i class="fas fa-link mr-3 w-5"></i>Generator
@@ -195,23 +205,6 @@
 
     <!-- Main Content -->
     <main class="pt-20 pb-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <style>
-        @media (max-width: 639px) {
-            nav {
-                min-height: 3.5rem !important;
-            }
-            main {
-                padding-top: 5rem !important;
-            }
-            #dashboard h2,
-            #tamu h2,
-            #generator h2 {
-                margin-top: 0.5rem !important;
-                margin-bottom: 1.2rem !important;
-            }
-        }
-        </style>
-        
         <!-- Dashboard Section -->
         <section id="dashboard" class="section mb-10">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
@@ -226,47 +219,87 @@
                 </div>
             </div>
             
-            <!-- Tabel Data Ucapan & Donasi dari Tamu -->
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Total Tamu</p>
+                            <h3 class="text-2xl font-bold" id="totalTamu">0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-users text-green-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Konfirmasi Hadir</p>
+                            <h3 class="text-2xl font-bold" id="totalHadir">0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-check-circle text-blue-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Total Donasi</p>
+                            <h3 class="text-2xl font-bold" id="totalDonasi">Rp 0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-hand-holding-heart text-yellow-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Total Kehadiran</p>
+                            <h3 class="text-2xl font-bold" id="totalKehadiran">0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user-friends text-purple-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabel Data Ucapan & Donasi -->
             <div class="bg-white rounded-xl shadow-md overflow-hidden mt-8">
                 <div class="px-4 md:px-6 py-4 border-b border-gray-200">
                     <h3 class="text-lg font-semibold text-gray-800">Ucapan & Donasi dari Tamu</h3>
                 </div>
                 <div class="overflow-x-auto">
-                    <div class="overflow-x-auto">
-                        <table class="w-full min-w-[600px]">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
-                                    <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ucapan</th>
-                                    <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nominal Donasi</th>
-                                    <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                    <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Metode Pembayaran</th>
-                                    <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jumlah Kehadiran</th>
-                                    <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Konfirmasi Kehadiran</th>
-                                    <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="ucapan-donasi-table" class="divide-y divide-gray-200">
-                                <!-- Data will be inserted via JS -->
-                            </tbody>
-                        </table>
-                    </div>
+                    <table class="w-full min-w-[800px]">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ucapan</th>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nominal Donasi</th>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Metode</th>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jml Kehadiran</th>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Waktu</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ucapan-donasi-table" class="divide-y divide-gray-200">
+                            <!-- Data will be inserted via JS -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
-
-            <!-- Recent Guests Table -->
-            <table class="w-full min-w-[600px]">
-                <tbody id="recent-guests-table" class="divide-y divide-gray-200">
-                    <!-- Data will be inserted via JS -->
-                </tbody>
-            </table>
         </section>
 
         <!-- Tamu Management Section -->
         <section id="tamu" class="section hidden mb-10">
             <h2 class="text-2xl font-bold text-gray-800 mb-6">Manajemen Tamu</h2>
             
-            <!-- Tambah Tamu Button (untuk tampilan mobile, tombol di dalam section) -->
             <div class="flex justify-end mb-4 sm:hidden">
                 <button onclick="openTamuModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm flex items-center">
                     <i class="fas fa-plus mr-2"></i>Tambah Tamu
@@ -289,6 +322,7 @@
                             <option value="hadir">Hadir</option>
                             <option value="tidak">Tidak Hadir</option>
                             <option value="pending">Pending</option>
+                            <option value="ragu">Ragu-ragu</option>
                         </select>
                     </div>
                 </div>
@@ -298,7 +332,6 @@
             <div class="bg-white rounded-xl shadow-md overflow-hidden">
                 <div class="px-4 md:px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <h3 class="text-lg font-semibold text-gray-800">Daftar Tamu</h3>
-                    <!-- Tombol tambah tamu untuk layar besar, di mobile tombol di atas sudah ada -->
                     <button onclick="openTamuModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm hidden sm:flex items-center">
                         <i class="fas fa-plus mr-2"></i>Tambah Tamu
                     </button>
@@ -311,10 +344,9 @@
                                 <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
                                 <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">No. WhatsApp</th>
                                 <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jml Kehadiran</th>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Donasi</th>
                                 <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Link Undangan</th>
-                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Metode Pembayaran</th>
-                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jumlah Kehadiran</th>
-                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Konfirmasi Kehadiran</th>
                                 <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
                             </tr>
                         </thead>
@@ -326,11 +358,54 @@
             </div>
         </section>
 
+        <!-- Donasi Management Section -->
+        <section id="donasi" class="section hidden mb-10">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Manajemen Donasi</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <p class="text-sm text-gray-500 mb-1">Total Donasi</p>
+                    <h3 class="text-2xl font-bold" id="totalDonasiDetail">Rp 0</h3>
+                </div>
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <p class="text-sm text-gray-500 mb-1">Jumlah Donatur</p>
+                    <h3 class="text-2xl font-bold" id="totalDonatur">0</h3>
+                </div>
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <p class="text-sm text-gray-500 mb-1">Donasi Tertinggi</p>
+                    <h3 class="text-2xl font-bold" id="donasiTertinggi">Rp 0</h3>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="px-4 md:px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800">Daftar Donasi</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nominal</th>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ucapan</th>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Metode</th>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th class="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Waktu</th>
+                            </tr>
+                        </thead>
+                        <tbody id="donasi-table-body" class="divide-y divide-gray-200">
+                            <!-- Data will be inserted via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
         <!-- Generator Section -->
         <section id="generator" class="section hidden mb-10">
             <h2 class="text-2xl font-bold text-gray-800 mb-6">Generator Link Undangan</h2>
             
-            <!-- Generator Form -->
             <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4">Buat Link Undangan</h3>
                 
@@ -358,7 +433,6 @@
                 </form>
             </div>
 
-            <!-- Result and Preview -->
             <div class="bg-white rounded-xl shadow-md p-4 md:p-6 mt-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4">Hasil Generate</h3>
                 
@@ -371,7 +445,7 @@
                                     <input id="generated-link" type="text" readonly class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Belum digenerate" />
                                     <button type="button" onclick="copyGeneratedLink()" title="Salin Link" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;"></button>
                                 </div>
-                                <button type="button" onclick="copyGeneratedLink()" class="bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 text-xs flex items-center justify-center min-w-[80px]" style="position:relative;"><i class="fas fa-copy mr-1"></i>Copy</button>
+                                <button type="button" onclick="copyGeneratedLink()" class="bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 text-xs flex items-center justify-center min-w-[80px]"><i class="fas fa-copy mr-1"></i>Copy</button>
                                 <button type="button" onclick="shareViaWA()" class="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 text-xs flex items-center justify-center min-w-[90px]"><i class="fab fa-whatsapp mr-1"></i>Share WA</button>
                             </div>
                         </div>
@@ -382,34 +456,429 @@
         </section>
     </main>
 
-    <!-- Firebase App (the core Firebase SDK) -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <!-- Firebase Realtime Database -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    
     <script>
-        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDMmOSMDuVpMFgUyPncBWLxAqTAY8oL2eg",
             authDomain: "khitanan-mifzal-kianu-alfaris.firebaseapp.com",
             databaseURL: "https://khitanan-mifzal-kianu-alfaris-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "khitanan-mifzal-kianu-alfaris",
-            storageBucket: "khitanan-mifzal-kianu-alfaris.firebasestorage.app",
+            storageBucket: "khitanan-mifzal-kianu-alfaris.appspot.com",
             messagingSenderId: "79815626779",
             appId: "1:79815626779:web:e7971ed8f6f083f869e8be",
             measurementId: "G-BWC43D9KBZ"
         };
-        
-        // Inisialisasi Firebase
+
+        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
-    </script>
-    
-    <script>
-        // ==================== SAMPLE JAVASCRIPT FOR FUNCTIONALITY ====================
-        // Catatan: Ini adalah skeleton/placeholder. Sesuaikan dengan file admin.js asli Anda.
+        const db = firebase.database();
+
+        // Global variables
+        let guests = [];
+        let donations = [];
+        let currentEditId = null;
+
+        // ==================== DATABASE FUNCTIONS ====================
         
-        // Mobile menu toggle dengan animasi
+        // Load data from Firebase
+        function loadData() {
+            // Load guests (tamu)
+            db.ref('tamu').on('value', (snapshot) => {
+                const data = snapshot.val();
+                guests = data ? Object.entries(data).map(([id, value]) => ({ id, ...value })) : [];
+                console.log('Guests loaded:', guests);
+                
+                // Load donations after guests are loaded
+                loadDonations();
+                
+                // Update UI
+                updateDashboardStats();
+                loadCrudTable();
+                loadGuestSelect();
+            });
+
+            // Listen for donations separately
+            db.ref('donations').on('value', (snapshot) => {
+                const data = snapshot.val();
+                donations = data ? Object.entries(data).map(([id, value]) => ({ id, ...value })) : [];
+                console.log('Donations loaded:', donations);
+                
+                // Update UI
+                updateDashboardStats();
+                loadUcapanDonasiTable();
+                loadDonasiTable();
+            });
+        }
+
+        function loadDonations() {
+            db.ref('donations').once('value', (snapshot) => {
+                const data = snapshot.val();
+                donations = data ? Object.entries(data).map(([id, value]) => ({ id, ...value })) : [];
+                updateDashboardStats();
+                loadUcapanDonasiTable();
+                loadDonasiTable();
+            });
+        }
+
+        // Save tamu
+        function saveTamu(e) {
+            e.preventDefault();
+            
+            const tamuData = {
+                nama: document.getElementById('nama').value,
+                wa: document.getElementById('wa').value,
+                status: document.getElementById('status').value,
+                jumlahKehadiran: 0,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+
+            const id = document.getElementById('tamu-id').value;
+
+            if (id) {
+                // Update existing
+                db.ref('tamu/' + id).update(tamuData)
+                    .then(() => {
+                        showNotification('Data tamu berhasil diupdate!', 'success');
+                        closeTamuModal();
+                    })
+                    .catch(error => showNotification('Error: ' + error.message, 'error'));
+            } else {
+                // Create new
+                db.ref('tamu').push(tamuData)
+                    .then(() => {
+                        showNotification('Data tamu berhasil ditambahkan!', 'success');
+                        closeTamuModal();
+                    })
+                    .catch(error => showNotification('Error: ' + error.message, 'error'));
+            }
+        }
+
+        // Delete tamu
+        function deleteTamu(id) {
+            if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
+                db.ref('tamu/' + id).remove()
+                    .then(() => showNotification('Data berhasil dihapus!', 'success'))
+                    .catch(error => showNotification('Error: ' + error.message, 'error'));
+            }
+        }
+
+        // Edit tamu
+        function editTamu(id) {
+            const tamu = guests.find(g => g.id === id);
+            if (tamu) {
+                document.getElementById('tamu-id').value = tamu.id;
+                document.getElementById('nama').value = tamu.nama || '';
+                document.getElementById('wa').value = tamu.wa || '';
+                document.getElementById('status').value = tamu.status || 'pending';
+                document.getElementById('modal-title').textContent = 'Edit Tamu';
+                document.getElementById('tamuModal').classList.remove('hidden');
+                document.getElementById('tamuModal').classList.add('flex');
+            }
+        }
+
+        // ==================== UI UPDATE FUNCTIONS ====================
+
+        function updateDashboardStats() {
+            const totalTamu = guests.length;
+            const totalHadir = guests.filter(g => g.status === 'hadir').length;
+            const totalDonasiValue = donations.reduce((sum, d) => sum + (parseInt(d.amount) || 0), 0);
+            const totalKehadiran = guests.reduce((sum, g) => sum + (parseInt(g.jumlahKehadiran) || 0), 0) + 
+                                   donations.reduce((sum, d) => sum + (parseInt(d.attendanceCount) || 0), 0);
+
+            document.getElementById('totalTamu').textContent = totalTamu;
+            document.getElementById('totalHadir').textContent = totalHadir;
+            document.getElementById('totalDonasi').textContent = formatRupiah(totalDonasiValue);
+            document.getElementById('totalKehadiran').textContent = totalKehadiran;
+
+            // Donasi detail
+            document.getElementById('totalDonasiDetail').textContent = formatRupiah(totalDonasiValue);
+            document.getElementById('totalDonatur').textContent = donations.length;
+            
+            const tertinggi = donations.length > 0 ? Math.max(...donations.map(d => parseInt(d.amount) || 0)) : 0;
+            document.getElementById('donasiTertinggi').textContent = formatRupiah(tertinggi);
+        }
+
+        function loadCrudTable() {
+            const searchTerm = (document.getElementById('search-input')?.value || '').toLowerCase();
+            const filterStatus = document.getElementById('filter-status')?.value || 'all';
+            
+            let filteredGuests = [...guests];
+            
+            // Apply filters
+            if (searchTerm) {
+                filteredGuests = filteredGuests.filter(g => 
+                    (g.nama || '').toLowerCase().includes(searchTerm) || 
+                    (g.wa || '').includes(searchTerm)
+                );
+            }
+            
+            if (filterStatus !== 'all') {
+                filteredGuests = filteredGuests.filter(g => g.status === filterStatus);
+            }
+            
+            // Sort by createdAt descending
+            filteredGuests.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+            
+            const tbody = document.getElementById('crud-table-body');
+            if (!tbody) return;
+            
+            if (filteredGuests.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-gray-500">Tidak ada data</td></tr>';
+                return;
+            }
+            
+            let html = '';
+            filteredGuests.forEach((guest, index) => {
+                const guestDonations = donations.filter(d => d.guestId === guest.id);
+                const totalDonasiGuest = guestDonations.reduce((sum, d) => sum + (parseInt(d.amount) || 0), 0);
+                
+                html += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 md:px-6 py-4 text-sm">${index + 1}</td>
+                        <td class="px-4 md:px-6 py-4 text-sm font-medium">${escapeHtml(guest.nama || '')}</td>
+                        <td class="px-4 md:px-6 py-4 text-sm">${escapeHtml(guest.wa || '-')}</td>
+                        <td class="px-4 md:px-6 py-4 text-sm">
+                            <span class="badge-${guest.status || 'pending'}">${getStatusLabel(guest.status)}</span>
+                        </td>
+                        <td class="px-4 md:px-6 py-4 text-sm">${guest.jumlahKehadiran || 0}</td>
+                        <td class="px-4 md:px-6 py-4 text-sm">${formatRupiah(totalDonasiGuest)}</td>
+                        <td class="px-4 md:px-6 py-4 text-sm">
+                            <button onclick="generateGuestLink('${guest.id}')" class="text-blue-600 hover:text-blue-800 mr-2" title="Generate Link">
+                                <i class="fas fa-link"></i>
+                            </button>
+                            <button onclick="copyGuestLink('${guest.id}')" class="text-green-600 hover:text-green-800" title="Copy Link">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </td>
+                        <td class="px-4 md:px-6 py-4 text-sm">
+                            <button onclick="editTamu('${guest.id}')" class="text-blue-600 hover:text-blue-800 mr-3">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteTamu('${guest.id}')" class="text-red-600 hover:text-red-800">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+
+        function loadUcapanDonasiTable() {
+            const tbody = document.getElementById('ucapan-donasi-table');
+            if (!tbody) return;
+            
+            const sortedDonations = [...donations].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+            
+            if (sortedDonations.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-gray-500">Belum ada donasi</td></tr>';
+                return;
+            }
+            
+            let html = '';
+            sortedDonations.slice(0, 20).forEach((donation) => {
+                html += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 md:px-6 py-4 text-sm">${escapeHtml(donation.name || '-')}</td>
+                        <td class="px-4 md:px-6 py-4 text-sm max-w-xs truncate">${escapeHtml(donation.message || '-')}</td>
+                        <td class="px-4 md:px-6 py-4 text-sm font-medium text-green-600">${formatRupiah(donation.amount)}</td>
+                        <td class="px-4 md:px-6 py-4 text-sm">
+                            <span class="badge-${donation.attendance || 'pending'}">${getStatusLabel(donation.attendance)}</span>
+                        </td>
+                        <td class="px-4 md:px-6 py-4 text-sm">${escapeHtml(donation.paymentMethod || '-')}</td>
+                        <td class="px-4 md:px-6 py-4 text-sm">${donation.attendanceCount || 0}</td>
+                        <td class="px-4 md:px-6 py-4 text-sm">${formatDate(donation.createdAt)}</td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+
+        function loadDonasiTable() {
+            const tbody = document.getElementById('donasi-table-body');
+            if (!tbody) return;
+            
+            const sortedDonations = [...donations].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+            
+            if (sortedDonations.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-gray-500">Belum ada donasi</td></tr>';
+                return;
+            }
+            
+            let html = '';
+            sortedDonations.forEach((donation, index) => {
+                html += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 md:px-6 py-4 text-sm">${index + 1}</td>
+                        <td class="px-4 md:px-6 py-4 text-sm font-medium">${escapeHtml(donation.name || '-')}</td>
+                        <td class="px-4 md:px-6 py-4 text-sm font-medium text-green-600">${formatRupiah(donation.amount)}</td>
+                        <td class="px-4 md:px-6 py-4 text-sm max-w-xs truncate">${escapeHtml(donation.message || '-')}</td>
+                        <td class="px-4 md:px-6 py-4 text-sm">${escapeHtml(donation.paymentMethod || '-')}</td>
+                        <td class="px-4 md:px-6 py-4 text-sm">
+                            <span class="badge-${donation.attendance || 'pending'}">${getStatusLabel(donation.attendance)}</span>
+                        </td>
+                        <td class="px-4 md:px-6 py-4 text-sm">${formatDate(donation.createdAt)}</td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+
+        function loadGuestSelect() {
+            const select = document.getElementById('guest-select');
+            if (!select) return;
+            
+            let options = '<option value="">Pilih tamu...</option>';
+            guests.forEach(guest => {
+                options += `<option value="${guest.id}">${escapeHtml(guest.nama)} - ${guest.wa || '-'}</option>`;
+            });
+            
+            select.innerHTML = options;
+        }
+
+        // ==================== UTILITY FUNCTIONS ====================
+
+        function formatRupiah(amount) {
+            if (!amount) return 'Rp 0';
+            return 'Rp ' + new Intl.NumberFormat('id-ID').format(amount);
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('id-ID', { 
+                day: 'numeric', 
+                month: 'short', 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+        }
+
+        function getStatusLabel(status) {
+            const labels = {
+                'hadir': 'Hadir',
+                'tidak': 'Tidak Hadir',
+                'pending': 'Pending',
+                'ragu': 'Ragu-ragu'
+            };
+            return labels[status] || status || 'Pending';
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showNotification(message, type = 'info') {
+            alert(message); // Simple alert for now
+        }
+
+        // ==================== NAVIGATION & MODAL ====================
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            
+            const selectedSection = document.getElementById(sectionId);
+            if (selectedSection) {
+                selectedSection.classList.remove('hidden');
+            }
+            
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('bg-gray-200', 'font-semibold');
+                if (link.getAttribute('data-section') === sectionId) {
+                    link.classList.add('bg-gray-200', 'font-semibold');
+                }
+            });
+        }
+
+        function openTamuModal(editId = null) {
+            document.getElementById('tamuModal').classList.remove('hidden');
+            document.getElementById('tamuModal').classList.add('flex');
+            if (editId) {
+                document.getElementById('modal-title').textContent = 'Edit Tamu';
+            } else {
+                document.getElementById('modal-title').textContent = 'Tambah Tamu';
+                document.getElementById('tamuForm').reset();
+                document.getElementById('tamu-id').value = '';
+            }
+        }
+
+        function closeTamuModal() {
+            document.getElementById('tamuModal').classList.add('hidden');
+            document.getElementById('tamuModal').classList.remove('flex');
+        }
+
+        function generateGuestLink(guestId) {
+            const guest = guests.find(g => g.id === guestId);
+            if (guest) {
+                const link = `${window.location.origin}/undangan.html?guest=${guestId}`;
+                document.getElementById('generated-link').value = link;
+                showSection('generator');
+            }
+        }
+
+        function copyGuestLink(guestId) {
+            const guest = guests.find(g => g.id === guestId);
+            if (guest) {
+                const link = `${window.location.origin}/undangan.html?guest=${guestId}`;
+                navigator.clipboard.writeText(link).then(() => {
+                    showNotification('Link berhasil disalin!', 'success');
+                });
+            }
+        }
+
+        function copyGeneratedLink() {
+            const linkInput = document.getElementById('generated-link');
+            if (linkInput.value) {
+                navigator.clipboard.writeText(linkInput.value).then(() => {
+                    showNotification('Link berhasil disalin!', 'success');
+                });
+            }
+        }
+
+        function shareViaWA() {
+            const link = document.getElementById('generated-link').value;
+            if (link) {
+                const text = encodeURIComponent(`Assalamu'alaikum, berikut link undangan khitanan:\n\n${link}`);
+                window.open(`https://wa.me/?text=${text}`, '_blank');
+            }
+        }
+
+        function exportAllData() {
+            const data = {
+                tamu: guests,
+                donasi: donations,
+                exportDate: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `data-khitanan-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+        }
+
+        function refreshData() {
+            loadData();
+            showNotification('Data berhasil direfresh!', 'success');
+        }
+
+        // ==================== INITIALIZATION ====================
+
         document.addEventListener('DOMContentLoaded', function() {
+            // Load data from Firebase
+            loadData();
+            
+            // Mobile menu toggle
             const mobileMenuButton = document.getElementById('mobile-menu-button');
             const mobileMenu = document.getElementById('mobile-menu');
             
@@ -417,15 +886,9 @@
                 mobileMenuButton.addEventListener('click', function(e) {
                     e.stopPropagation();
                     mobileMenu.classList.toggle('open');
-                    // Ubah icon burger menjadi X (optional)
                     const icon = this.querySelector('i');
-                    if (icon.classList.contains('fa-bars')) {
-                        icon.classList.remove('fa-bars');
-                        icon.classList.add('fa-times');
-                    } else {
-                        icon.classList.remove('fa-times');
-                        icon.classList.add('fa-bars');
-                    }
+                    icon.classList.toggle('fa-bars');
+                    icon.classList.toggle('fa-times');
                 });
             }
 
@@ -464,12 +927,7 @@
             // Form submit for tamu
             const tamuForm = document.getElementById('tamuForm');
             if (tamuForm) {
-                tamuForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    // Placeholder for saveTamu function
-                    alert('Fungsi saveTamu() dipanggil. Implementasi sesuai file admin.js asli.');
-                    closeTamuModal();
-                });
+                tamuForm.addEventListener('submit', saveTamu);
             }
 
             // Generator form submit
@@ -477,97 +935,30 @@
             if (generatorForm) {
                 generatorForm.addEventListener('submit', function(e) {
                     e.preventDefault();
-                    alert('Generate link berhasil (simulasi)');
+                    const guestId = document.getElementById('guest-select').value;
+                    if (guestId) {
+                        generateGuestLink(guestId);
+                    } else {
+                        showNotification('Pilih tamu terlebih dahulu!', 'error');
+                    }
                 });
             }
 
-            // Search and filter listeners (placeholder)
+            // Search and filter listeners
             const searchInput = document.getElementById('search-input');
             const filterSelect = document.getElementById('filter-status');
             
             if (searchInput) {
-                searchInput.addEventListener('input', function() {
-                    // Placeholder for loadCrudTable
-                    console.log('Search:', this.value);
-                });
+                searchInput.addEventListener('input', debounce(loadCrudTable, 300));
             }
             
             if (filterSelect) {
-                filterSelect.addEventListener('change', function() {
-                    console.log('Filter:', this.value);
-                });
+                filterSelect.addEventListener('change', loadCrudTable);
             }
 
             // Show dashboard by default
             showSection('dashboard');
-            
-            // Load sample data (placeholder)
-            console.log('Admin panel loaded');
         });
-
-        function showSection(sectionId) {
-            // Sembunyikan semua section
-            document.querySelectorAll('.section').forEach(section => {
-                section.classList.add('hidden');
-            });
-            
-            // Tampilkan section yang dipilih
-            const selectedSection = document.getElementById(sectionId);
-            if (selectedSection) {
-                selectedSection.classList.remove('hidden');
-            }
-            
-            // Update active state pada nav links
-            document.querySelectorAll('.nav-link').forEach(link => {
-                link.classList.remove('bg-gray-200', 'font-semibold');
-                if (link.getAttribute('data-section') === sectionId) {
-                    link.classList.add('bg-gray-200', 'font-semibold');
-                }
-            });
-        }
-
-        // Modal functions
-        function openTamuModal(editId = null) {
-            document.getElementById('tamuModal').classList.remove('hidden');
-            document.getElementById('tamuModal').classList.add('flex');
-            if (editId) {
-                document.getElementById('modal-title').textContent = 'Edit Tamu';
-                // Placeholder untuk load data
-            } else {
-                document.getElementById('modal-title').textContent = 'Tambah Tamu';
-                document.getElementById('tamuForm').reset();
-                document.getElementById('tamu-id').value = '';
-            }
-        }
-
-        function closeTamuModal() {
-            document.getElementById('tamuModal').classList.add('hidden');
-            document.getElementById('tamuModal').classList.remove('flex');
-        }
-
-        // Placeholder functions
-        function exportAllData() {
-            alert('Export data Excel (simulasi)');
-        }
-
-        function refreshData() {
-            alert('Data di-refresh (simulasi)');
-        }
-
-        function copyGeneratedLink() {
-            const linkInput = document.getElementById('generated-link');
-            if (linkInput.value) {
-                linkInput.select();
-                document.execCommand('copy');
-                alert('Link disalin!');
-            } else {
-                alert('Tidak ada link untuk disalin');
-            }
-        }
-
-        function shareViaWA() {
-            alert('Fungsi share via WA (simulasi)');
-        }
 
         // Debounce function
         function debounce(func, wait) {
@@ -582,6 +973,5 @@
             };
         }
     </script>
-    <!-- <script src="js/admin.js"></script> -->
 </body>
 </html>
